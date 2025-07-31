@@ -16,7 +16,7 @@ class DatabaseService {
 
   void _initConnection() {
     // Parse the connection URI
-    final uri = 'postgres://avnadmin:[PASSWORD]@pg-20190fe4-savessa.h.aivencloud.com:24322/defaultdb?sslmode=require';
+    const uri = 'postgres://avnadmin:[PASSWORD]@pg-20190fe4-savessa.h.aivencloud.com:24322/defaultdb?sslmode=require';
     
     // Extract connection details from URI
     final RegExp regex = RegExp(r'postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)');

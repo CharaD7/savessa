@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
 enum ButtonType { primary, secondary, text }
 
@@ -58,7 +57,7 @@ class AppButton extends StatelessWidget {
         ],
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16.0,
           ),

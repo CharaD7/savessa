@@ -69,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _emailFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please ensure your email is valid before continuing.'),
+          content: const Text('Please ensure your email is valid before continuing.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _passwordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please ensure your password meets all requirements.'),
+          content: const Text('Please ensure your password meets all requirements.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -93,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _confirmPasswordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please ensure your password confirmation matches.'),
+          content: const Text('Please ensure your password confirmation matches.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -127,7 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Email already registered. Please use a different email.'),
+            content: const Text('Email already registered. Please use a different email.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text('auth.register'.tr()),
         backgroundColor: Colors.transparent,

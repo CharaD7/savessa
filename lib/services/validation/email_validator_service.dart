@@ -39,7 +39,7 @@ class EmailValidatorService {
       // Use Abstract API for email validation
       // Free tier allows 100 requests per month
       // https://www.abstractapi.com/api/email-verification-validation-api
-      final apiKey = 'YOUR_ABSTRACT_API_KEY'; // Replace with your API key
+      const apiKey = 'YOUR_ABSTRACT_API_KEY'; // Replace with your API key
       final response = await http.get(
         Uri.parse('https://emailvalidation.abstractapi.com/v1/?api_key=$apiKey&email=$email'),
       );

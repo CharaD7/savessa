@@ -17,7 +17,7 @@ class AppTheme {
   // Light theme
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: royalPurple,
       onPrimary: white,
       primaryContainer: lightPurple,
@@ -27,8 +27,6 @@ class AppTheme {
       secondaryContainer: lightGold,
       onSecondaryContainer: black,
       error: error,
-      background: white,
-      onBackground: black,
       surface: white,
       onSurface: black,
     ),
@@ -107,30 +105,30 @@ class AppTheme {
       color: royalPurple,
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return royalPurple;
         }
         return lightGrey;
       }),
     ),
     radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return royalPurple;
         }
         return lightGrey;
       }),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return royalPurple;
         }
         return lightGrey;
       }),
-      trackColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return royalPurple.withOpacity(0.5);
         }
         return lightGrey.withOpacity(0.5);
@@ -141,7 +139,7 @@ class AppTheme {
   // Dark theme
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: lightPurple,
       onPrimary: white,
       primaryContainer: royalPurple,
@@ -151,9 +149,7 @@ class AppTheme {
       secondaryContainer: lightGold,
       onSecondaryContainer: black,
       error: error,
-      background: const Color(0xFF121212),
-      onBackground: white,
-      surface: const Color(0xFF1E1E1E),
+      surface: Color(0xFF1E1E1E),
       onSurface: white,
     ),
     textTheme: GoogleFonts.nunitoTextTheme(
@@ -232,30 +228,30 @@ class AppTheme {
       color: lightPurple,
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightPurple;
         }
         return grey;
       }),
     ),
     radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightPurple;
         }
         return grey;
       }),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightPurple;
         }
         return grey;
       }),
-      trackColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightPurple.withOpacity(0.5);
         }
         return grey.withOpacity(0.5);
