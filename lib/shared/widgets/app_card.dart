@@ -12,7 +12,7 @@ class AppCard extends StatelessWidget {
   final double borderRadius;
   final Color? backgroundColor;
   final Color? shadowColor;
-  final BorderSide? border;
+  final BoxBorder? border;
   final bool hasShadow;
   final double? width;
   final double? height;

@@ -3,13 +3,25 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/splash/presentation/screens/splash_screen.dart';
+import 'core/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  // Initialize EasyLocalization
+  await EasyLocalization.ensureInitialized();
+  
+  // Initialize Firebase (with error handling)
+  try {
+    await Firebase.initializeApp();
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+    // Continue without Firebase for now
+  }
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -17,7 +29,14 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const MyApp());
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('fr')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -33,13 +52,16 @@ class MyApp extends StatelessWidget {
         ),
         // Add more providers as needed
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Savessa',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        routerConfig: AppRouter.router,
       ),
     );
   }

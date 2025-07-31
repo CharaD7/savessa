@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// Import screens as they are created
-// import '../../features/auth/presentation/screens/login_screen.dart';
-// import '../../features/auth/presentation/screens/register_screen.dart';
+// Import screens
+import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
 
@@ -34,17 +36,17 @@ class AppRouter {
       // Splash screen
       GoRoute(
         path: '/splash',
-        builder: (context, state) => const PlaceholderScreen(title: 'Splash'),
+        builder: (context, state) => const SplashScreen(),
       ),
       
       // Authentication routes
       GoRoute(
         path: '/login',
-        builder: (context, state) => const PlaceholderScreen(title: 'Login'),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const PlaceholderScreen(title: 'Register'),
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
@@ -61,7 +63,7 @@ class AppRouter {
           // Home/Dashboard
           GoRoute(
             path: '/home',
-            builder: (context, state) => const PlaceholderScreen(title: 'Home'),
+            builder: (context, state) => const HomeScreen(),
           ),
           
           // Savings
