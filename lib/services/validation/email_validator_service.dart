@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../core/config/env_config.dart';
 
 class EmailValidatorService {
   static final EmailValidatorService _instance = EmailValidatorService._internal();
@@ -39,7 +40,15 @@ class EmailValidatorService {
       // Use Abstract API for email validation
       // Free tier allows 100 requests per month
       // https://www.abstractapi.com/api/email-verification-validation-api
-      const apiKey = 'YOUR_ABSTRACT_API_KEY'; // Replace with your API key
+      final config = EnvConfig();
+      final apiKey = config.abstractApiKey;
+      
+      // Skip API call if no API key is provided
+      if (apiKey.isEmpty) {
+        print('Abstract API key not found in environment variables');
+        return (true, null); // Fallback to basic validation
+      }
+      
       final response = await http.get(
         Uri.parse('https://emailvalidation.abstractapi.com/v1/?api_key=$apiKey&email=$email'),
       );

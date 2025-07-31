@@ -1,4 +1,5 @@
 import 'package:postgres/postgres.dart';
+import '../../core/config/env_config.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -15,30 +16,21 @@ class DatabaseService {
   }
 
   void _initConnection() {
-    // Parse the connection URI
-    const uri = 'postgres://avnadmin:[PASSWORD]@pg-20190fe4-savessa.h.aivencloud.com:24322/defaultdb?sslmode=require';
+    // Get database configuration from environment variables
+    final config = EnvConfig();
     
-    // Extract connection details from URI
-    final RegExp regex = RegExp(r'postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)');
-    final match = regex.firstMatch(uri);
-    
-    if (match != null) {
-      final username = match.group(1)!;
-      final password = match.group(2)!;
-      final host = match.group(3)!;
-      final port = int.parse(match.group(4)!);
-      final database = match.group(5)!;
-      
+    try {
       _connection = PostgreSQLConnection(
-        host,
-        port,
-        database,
-        username: username,
-        password: password,
-        useSSL: true,
+        config.dbHost,
+        int.parse(config.dbPort),
+        config.dbName,
+        username: config.dbUser,
+        password: config.dbPassword,
+        useSSL: config.dbSsl.toLowerCase() == 'require',
       );
-    } else {
-      throw Exception('Invalid PostgreSQL connection URI');
+    } catch (e) {
+      print('Error initializing database connection: $e');
+      throw Exception('Failed to initialize PostgreSQL connection: $e');
     }
   }
 

@@ -6,10 +6,17 @@ This document provides comprehensive documentation for the Savessa app's Postgre
 
 ## Connection Details
 
-The PostgreSQL database connection details are:
+The PostgreSQL database connection details are stored in environment variables for security reasons. 
+See the `.env.example` file for the required environment variables structure.
 
 ```
-Service URI: postgres://avnadmin:[PASSWORD]@pg-20190fe4-savessa.h.aivencloud.com:24322/defaultdb?sslmode=require
+# Example structure (DO NOT use these values in production)
+DB_HOST=your-database-host.example.com
+DB_PORT=5432
+DB_NAME=your_database_name
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_SSL=require
 ```
 
 ## Database Schema
