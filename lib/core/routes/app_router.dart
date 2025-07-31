@@ -3,10 +3,16 @@ import 'package:go_router/go_router.dart';
 
 // Import screens
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/language/presentation/screens/language_selection_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/role/presentation/screens/role_selection_screen.dart';
+import '../../features/account/presentation/screens/account_setup_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../constants/icon_mapping.dart';
+import '../theme/theme_demo.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
 
@@ -38,6 +44,30 @@ class AppRouter {
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      
+      // Language selection screen
+      GoRoute(
+        path: '/language',
+        builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      
+      // Onboarding screen
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      
+      // Role selection screen
+      GoRoute(
+        path: '/role',
+        builder: (context, state) => const RoleSelectionScreen(),
+      ),
+      
+      // Account setup screen
+      GoRoute(
+        path: '/account-setup',
+        builder: (context, state) => const AccountSetupScreen(),
       ),
       
       // Authentication routes
@@ -135,7 +165,13 @@ class AppRouter {
       // Settings
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const PlaceholderScreen(title: 'Settings'),
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'theme',
+            builder: (context, state) => const ThemeDemoScreen(),
+          ),
+        ],
       ),
       
       // Notifications
