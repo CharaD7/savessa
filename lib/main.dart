@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -7,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/routes/app_router.dart';
 
 void main() async {
@@ -18,14 +18,15 @@ void main() async {
   // Initialize EasyLocalization
   await EasyLocalization.ensureInitialized();
   
-  // Initialize Firebase (with error handling)
-  try {
-    await Firebase.initializeApp();
-    print('Firebase initialized successfully');
-  } catch (e) {
-    print('Failed to initialize Firebase: $e');
-    // Continue without Firebase for now
-  }
+  // Temporarily disable Firebase initialization
+  // try {
+  //   await Firebase.initializeApp();
+  //   print('Firebase initialized successfully');
+  // } catch (e) {
+  //   print('Failed to initialize Firebase: $e');
+  //   // Continue without Firebase for now
+  // }
+  print('Firebase initialization skipped');
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -54,18 +55,25 @@ class MyApp extends StatelessWidget {
           create: (_) => Connectivity().onConnectivityChanged,
           initialData: ConnectivityResult.none,
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ),
         // Add more providers as needed
       ],
-      child: MaterialApp.router(
-        title: 'Savessa',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        routerConfig: AppRouter.router,
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp.router(
+            title: 'Savessa',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            routerConfig: AppRouter.router,
+          );
+        },
       ),
     );
   }
