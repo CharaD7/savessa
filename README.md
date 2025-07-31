@@ -115,11 +115,42 @@ lib/
 - Firebase account
 - Algorand development account
 
+#### Platform-Specific Build Tools
+Depending on which platform you're targeting, you'll need additional build tools:
+
+**For Android:**
+- Android SDK
+- Android NDK
+
+**For iOS/macOS:**
+- Xcode
+- CocoaPods
+
+**For Linux:**
+- Clang or GCC (C++ compiler)
+- Ninja build system
+- GTK development headers
+- Other dependencies:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev
+  ```
+
+**For Windows:**
+- Visual Studio with C++ build tools
+- Windows 10 SDK
+- CMake
+- Ninja build system
+  ```bash
+  # Using chocolatey
+  choco install cmake ninja visualstudio2019-workload-nativedesktop
+  ```
+
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/savessa.git
+   git clone https://github.com/CharaD7/savessa.git
    cd savessa
    ```
 
@@ -169,7 +200,17 @@ Savessa leverages Algorand blockchain technology for:
 
 Savessa features a clean, intuitive interface designed with all users in mind:
 
-- **Color Palette**: Royal purple, gold, and white for a premium feel
+- **Color Palette**:
+  - Primary – Royal Purple (#6A0DAD): Suggests wealth, ambition, and wisdom
+  - Accent – Metallic Gold (#FFD700): Signals premium quality and success
+  - Contrast – Pure White (#FFFFFF): Clean backdrop for high readability
+  - Dark Mode: Elegant dark theme with appropriate color adaptations
+
+- **Theme Support**:
+  - Light/Dark mode toggle for user preference
+  - System theme detection for automatic adjustment
+  - Persistent theme settings across app sessions
+
 - **Accessibility**: Support for older users and those with limited tech experience
 - **Progressive Complexity**: Simple interfaces that scale up as users become more familiar
 - **Guided Onboarding**: Step-by-step tutorials for all features
@@ -200,6 +241,49 @@ Savessa offers multiple revenue streams:
 - **Q2 2026**: Implement AI-powered savings recommendations
 - **Q3 2026**: Expand to other African countries
 - **Q4 2026**: Global expansion planning
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### CMake Error: Unable to find Ninja build system
+
+**Error Message:**
+```
+CMake Error: CMake was unable to find a build program corresponding to "Ninja". CMAKE_MAKE_PROGRAM is not set. You probably need to select a different build tool.
+CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage
+Error: Unable to generate build files
+```
+
+**Solution:**
+1. Install the Ninja build system and C++ compiler:
+   - **Linux:** `sudo apt-get install ninja-build cmake clang`
+   - **Windows:** `choco install ninja cmake` and install Visual Studio with C++ build tools
+   - **macOS:** `brew install ninja cmake`
+
+2. If you can't install Ninja, you can configure Flutter to use a different CMake generator:
+   ```bash
+   # For Linux/macOS
+   export CMAKE_GENERATOR="Unix Makefiles"
+   flutter run
+   
+   # For Windows
+   set CMAKE_GENERATOR="Visual Studio 16 2019"
+   flutter run
+   ```
+
+#### Flutter pub get fails with dependency conflicts
+
+**Solution:**
+1. Try running with the `--no-pub-get` flag first:
+   ```bash
+   flutter pub get --no-pub-get
+   ```
+2. If that doesn't work, try upgrading dependencies:
+   ```bash
+   flutter pub upgrade --major-versions
+   ```
+3. If issues persist, check the `pubspec.yaml` for conflicting dependencies
 
 ## 👥 Contributing
 
