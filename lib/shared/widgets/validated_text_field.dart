@@ -285,7 +285,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
             Container(
               margin: const EdgeInsets.all(12),
               child: const Icon(
-                Icons.check_circle,
+                IconMapping.checkCircle,
                 color: AppTheme.success,
                 size: 20,
               ),
@@ -297,7 +297,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
             Container(
               margin: const EdgeInsets.all(12),
               child: const Icon(
-                Icons.cancel,
+                IconMapping.xCircle,
                 color: AppTheme.error,
                 size: 20,
               ),

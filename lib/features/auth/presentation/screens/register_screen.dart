@@ -417,14 +417,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onChanged: (value) {
                       // Force rebuild to update password strength indicator
                       setState(() {
-                        _passwordValidationStatus = ValidationStatus.none;
+                        // Only reset password validation status if the field is empty
+                        if (value.isEmpty) {
+                          _passwordValidationStatus = ValidationStatus.none;
+                        }
                         
-                        // Also reset confirm password validation if it was previously valid
-                        // since changing the password might make the confirmation invalid
-                        if (_confirmPasswordValidationStatus == ValidationStatus.valid &&
-                            _confirmPasswordController.text.isNotEmpty &&
-                            _confirmPasswordController.text != value) {
-                          _confirmPasswordValidationStatus = ValidationStatus.invalid;
+                        // If confirm password field is not empty, update its validation status
+                        if (_confirmPasswordController.text.isNotEmpty) {
+                          // If passwords match, set confirm password validation to valid
+                          if (_confirmPasswordController.text == value) {
+                            _confirmPasswordValidationStatus = ValidationStatus.valid;
+                          } else {
+                            // If passwords don't match, set confirm password validation to invalid
+                            _confirmPasswordValidationStatus = ValidationStatus.invalid;
+                          }
+                          
+                          // Trigger validation for confirm password field
+                          _formKey.currentState?.validate();
                         }
                       });
                     },
@@ -469,21 +478,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                     // Listen for changes to update validation status in real-time
                     onChanged: (value) {
-                      // Reset validation status when text changes
+                      // Update validation status based on whether passwords match
                       setState(() {
-                        _confirmPasswordValidationStatus = ValidationStatus.none;
+                        if (value.isEmpty) {
+                          _confirmPasswordValidationStatus = ValidationStatus.none;
+                        } else if (value == _passwordController.text) {
+                          _confirmPasswordValidationStatus = ValidationStatus.valid;
+                        } else {
+                          _confirmPasswordValidationStatus = ValidationStatus.invalid;
+                        }
                       });
                     },
                     onValidationComplete: (status) {
-                      // Update validation status when validation completes
-                      setState(() {
-                        _confirmPasswordValidationStatus = status;
-                        
-                        // If valid, unfocus to hide keyboard
-                        if (_confirmPasswordValidationStatus == ValidationStatus.valid) {
-                          _confirmPasswordFocusNode.unfocus();
-                        }
-                      });
+                      // Only unfocus if valid, don't override the validation status
+                      // since we're already handling it in onChanged
+                      if (status == ValidationStatus.valid) {
+                        _confirmPasswordFocusNode.unfocus();
+                      }
                     },
                   ),
                   const SizedBox(height: 24),
