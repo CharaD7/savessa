@@ -27,6 +27,7 @@ class ValidatedTextField extends StatefulWidget {
   final int? minLines;
   final int? maxLength;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
   final VoidCallback? onTap;
   final Future<(bool, String?)> Function(String)? asyncValidator;
   final FormFieldValidator<String>? validator;
@@ -64,6 +65,7 @@ class ValidatedTextField extends StatefulWidget {
     this.minLines,
     this.maxLength,
     this.onChanged,
+    this.onFieldSubmitted,
     this.onTap,
     this.asyncValidator,
     this.validator,
@@ -233,6 +235,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
           widget.onChanged!(value);
         }
       },
+      onFieldSubmitted: widget.onFieldSubmitted,
       onTap: widget.onTap,
       validator: (value) {
         // Use the cached error message if available

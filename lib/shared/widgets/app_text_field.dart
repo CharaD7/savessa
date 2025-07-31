@@ -19,6 +19,7 @@ class AppTextField extends StatefulWidget {
   final int? minLines;
   final int? maxLength;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
   final VoidCallback? onTap;
   final FormFieldValidator<String>? validator;
   final List<TextInputFormatter>? inputFormatters;
@@ -52,6 +53,7 @@ class AppTextField extends StatefulWidget {
     this.minLines,
     this.maxLength,
     this.onChanged,
+    this.onFieldSubmitted,
     this.onTap,
     this.validator,
     this.inputFormatters,
@@ -124,6 +126,7 @@ class _AppTextFieldState extends State<AppTextField> {
       minLines: widget.minLines,
       maxLength: widget.maxLength,
       onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onFieldSubmitted,
       onTap: widget.onTap,
       validator: widget.validator ?? (widget.required ? _requiredValidator : null),
       inputFormatters: widget.inputFormatters,
