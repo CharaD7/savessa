@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../services/database/database_service.dart';
+import '../../../../services/validation/email_validator_service.dart';
+import '../../../../services/validation/password_validator_service.dart';
 import '../../../../core/constants/icon_mapping.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -25,6 +28,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String _selectedRole = 'member'; // Default role
+  
+  // Validation status tracking
+  ValidationStatus _emailValidationStatus = ValidationStatus.none;
+  ValidationStatus _passwordValidationStatus = ValidationStatus.none;
+  ValidationStatus _confirmPasswordValidationStatus = ValidationStatus.none;
+  
+  // Focus nodes to control field focus
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
 
   @override
   void dispose() {
@@ -35,11 +48,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    
+    // Dispose focus nodes
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
+    
     super.dispose();
   }
 
   void _register() async {
+    // First check if the form is valid using standard validation
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    // Then check if all fields with async validation are valid
+    if (_emailValidationStatus != ValidationStatus.valid) {
+      // Trigger email validation if not already valid
+      _emailFocusNode.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please ensure your email is valid before continuing.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+    
+    if (_passwordValidationStatus != ValidationStatus.valid) {
+      // Trigger password validation if not already valid
+      _passwordFocusNode.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please ensure your password meets all requirements.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+    
+    if (_confirmPasswordValidationStatus != ValidationStatus.valid) {
+      // Trigger confirm password validation if not already valid
+      _confirmPasswordFocusNode.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please ensure your password confirmation matches.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
       return;
     }
 
@@ -63,6 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final dbService = DatabaseService();
       
       // Check if user with this email already exists
+      // This is a double-check since we already validated the email
       final existingUser = await dbService.getUserByEmail(userData['email']!);
       if (existingUser != null) {
         if (!mounted) return;
@@ -201,20 +259,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   
                   // Email field
-                  AppTextField(
+                  ValidatedTextField(
                     label: 'auth.email'.tr(),
                     controller: _emailController,
+                    focusNode: _emailFocusNode,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     prefixIcon: const Icon(IconMapping.email),
+                    required: true,
+                    showValidationStatus: true,
+                    preventNextIfInvalid: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
                       }
-                      if (!value.contains('@')) {
+                      
+                      final emailValidator = EmailValidatorService();
+                      if (!emailValidator.isValidFormat(value)) {
                         return 'errors.invalid_email'.tr();
                       }
+                      
                       return null;
+                    },
+                    asyncValidator: (value) async {
+                      final emailValidator = EmailValidatorService();
+                      
+                      // First check if email is already registered
+                      final isRegistered = await emailValidator.isEmailRegistered(value);
+                      if (isRegistered) {
+                        return (false, 'Email already registered. Please use a different email.');
+                      }
+                      
+                      // Then validate email existence and activity
+                      return await emailValidator.validateEmail(value);
+                    },
+                    onChanged: (value) {
+                      // Reset validation status when text changes
+                      setState(() {
+                        _emailValidationStatus = ValidationStatus.none;
+                      });
+                    },
+                    onValidationComplete: (status) {
+                      // Update validation status when validation completes
+                      setState(() {
+                        _emailValidationStatus = status;
+                        
+                        // If valid, move to next field
+                        if (_emailValidationStatus == ValidationStatus.valid) {
+                          _passwordFocusNode.requestFocus();
+                        }
+                      });
                     },
                   ),
                   const SizedBox(height: 16),
@@ -293,31 +387,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   
                   // Password field
-                  AppTextField(
+                  ValidatedTextField(
                     label: 'auth.password'.tr(),
                     controller: _passwordController,
+                    focusNode: _passwordFocusNode,
                     obscureText: true,
                     textInputAction: TextInputAction.next,
                     prefixIcon: const Icon(IconMapping.lock),
+                    required: true,
+                    showValidationStatus: true,
+                    preventNextIfInvalid: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
                       }
-                      if (value.length < 6) {
-                        return 'errors.password_too_short'.tr();
+                      
+                      final passwordValidator = PasswordValidatorService();
+                      final (isPolicyValid, policyError) = passwordValidator.validatePolicy(value);
+                      if (!isPolicyValid) {
+                        return policyError;
                       }
+                      
                       return null;
                     },
+                    asyncValidator: (value) async {
+                      final passwordValidator = PasswordValidatorService();
+                      return await passwordValidator.checkCompromised(value);
+                    },
+                    onChanged: (value) {
+                      // Force rebuild to update password strength indicator
+                      setState(() {
+                        _passwordValidationStatus = ValidationStatus.none;
+                        
+                        // Also reset confirm password validation if it was previously valid
+                        // since changing the password might make the confirmation invalid
+                        if (_confirmPasswordValidationStatus == ValidationStatus.valid &&
+                            _confirmPasswordController.text.isNotEmpty &&
+                            _confirmPasswordController.text != value) {
+                          _confirmPasswordValidationStatus = ValidationStatus.invalid;
+                        }
+                      });
+                    },
+                    onValidationComplete: (status) {
+                      // Update validation status when validation completes
+                      setState(() {
+                        _passwordValidationStatus = status;
+                        
+                        // If valid, move to next field
+                        if (_passwordValidationStatus == ValidationStatus.valid) {
+                          _confirmPasswordFocusNode.requestFocus();
+                        }
+                      });
+                    },
                   ),
+                  // Password strength indicator
+                  if (_passwordController.text.isNotEmpty)
+                    PasswordStrengthIndicator(
+                      password: _passwordController.text,
+                    ),
                   const SizedBox(height: 16),
                   
                   // Confirm password field
-                  AppTextField(
+                  ValidatedTextField(
                     label: 'auth.confirm_password'.tr(),
                     controller: _confirmPasswordController,
+                    focusNode: _confirmPasswordFocusNode,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     prefixIcon: const Icon(IconMapping.lockOutline),
+                    required: true,
+                    showValidationStatus: true,
+                    preventNextIfInvalid: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -326,6 +466,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return 'errors.password_mismatch'.tr();
                       }
                       return null;
+                    },
+                    // Listen for changes to update validation status in real-time
+                    onChanged: (value) {
+                      // Reset validation status when text changes
+                      setState(() {
+                        _confirmPasswordValidationStatus = ValidationStatus.none;
+                      });
+                    },
+                    onValidationComplete: (status) {
+                      // Update validation status when validation completes
+                      setState(() {
+                        _confirmPasswordValidationStatus = status;
+                        
+                        // If valid, unfocus to hide keyboard
+                        if (_confirmPasswordValidationStatus == ValidationStatus.valid) {
+                          _confirmPasswordFocusNode.unfocus();
+                        }
+                      });
                     },
                   ),
                   const SizedBox(height: 24),
