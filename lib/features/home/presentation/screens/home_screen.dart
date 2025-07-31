@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../core/constants/icon_mapping.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -17,13 +18,13 @@ class HomeScreen extends StatelessWidget {
         title: Text('home.title'.tr()),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: const Icon(IconMapping.notifications),
             onPressed: () {
               context.go('/notifications');
             },
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(IconMapping.settings),
             onPressed: () {
               context.go('/settings');
             },
@@ -57,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 16.0),
                 title: 'home.total_savings'.tr(),
                 trailing: IconButton(
-                  icon: const Icon(Icons.info_outline, color: Colors.white),
+                  icon: const Icon(IconMapping.infoOutline, color: Colors.white),
                   onPressed: () {
                     // Show info about total savings
                   },
@@ -133,7 +134,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _buildQuickActionCard(
                       context,
-                      Icons.add_circle,
+                      IconMapping.addCircle,
                       'home.add_savings'.tr(),
                       () => context.go('/savings/add'),
                     ),
@@ -142,7 +143,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _buildQuickActionCard(
                       context,
-                      Icons.history,
+                      IconMapping.history,
                       'home.view_history'.tr(),
                       () => context.go('/savings/history'),
                     ),
@@ -155,7 +156,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _buildQuickActionCard(
                       context,
-                      Icons.group_add,
+                      IconMapping.groupAdd,
                       'home.join_group'.tr(),
                       () => context.go('/groups'),
                     ),
@@ -164,7 +165,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _buildQuickActionCard(
                       context,
-                      Icons.add_box,
+                      IconMapping.addBox,
                       'home.create_group'.tr(),
                       () => context.go('/groups/create'),
                     ),
@@ -198,7 +199,7 @@ class HomeScreen extends StatelessWidget {
                 'Monthly Contribution',
                 'GHS 500.00',
                 DateTime.now().subtract(const Duration(days: 2)),
-                Icons.arrow_upward,
+                IconMapping.arrowUpward,
                 Colors.green,
               ),
               _buildActivityItem(
@@ -206,7 +207,7 @@ class HomeScreen extends StatelessWidget {
                 'Group Savings - Family',
                 'GHS 200.00',
                 DateTime.now().subtract(const Duration(days: 5)),
-                Icons.arrow_upward,
+                IconMapping.arrowUpward,
                 Colors.green,
               ),
               _buildActivityItem(
@@ -214,7 +215,7 @@ class HomeScreen extends StatelessWidget {
                 'Withdrawal',
                 'GHS 1,000.00',
                 DateTime.now().subtract(const Duration(days: 15)),
-                Icons.arrow_downward,
+                IconMapping.arrowDownward,
                 Colors.red,
               ),
               

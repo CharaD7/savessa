@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
+import '../../core/constants/icon_mapping.dart';
 
 class AppTextField extends StatefulWidget {
   final String label;
@@ -154,7 +155,7 @@ class _AppTextFieldState extends State<AppTextField> {
     if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
       suffixIcons.add(
         IconButton(
-          icon: const Icon(Icons.clear, size: 20),
+          icon: const Icon(IconMapping.clear, size: 20),
           onPressed: () {
             _controller.clear();
             if (widget.onChanged != null) {
@@ -171,7 +172,7 @@ class _AppTextFieldState extends State<AppTextField> {
       suffixIcons.add(
         IconButton(
           icon: Icon(
-            _obscureText ? Icons.visibility_off : Icons.visibility,
+            _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
             size: 20,
           ),
           onPressed: () {

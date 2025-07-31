@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../core/constants/icon_mapping.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -124,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.email),
+                    prefixIcon: const Icon(IconMapping.email),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -143,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
-                    prefixIcon: const Icon(Icons.lock),
+                    prefixIcon: const Icon(IconMapping.lock),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();

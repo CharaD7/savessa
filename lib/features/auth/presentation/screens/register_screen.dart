@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../services/database/database_service.dart';
+import '../../../../core/constants/icon_mapping.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -62,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final dbService = DatabaseService();
       
       // Check if user with this email already exists
-      final existingUser = await dbService.getUserByEmail(userData['email']);
+      final existingUser = await dbService.getUserByEmail(userData['email']!);
       if (existingUser != null) {
         if (!mounted) return;
         
@@ -164,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'auth.first_name'.tr(),
                     controller: _firstNameController,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.person),
+                    prefixIcon: const Icon(IconMapping.person),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -179,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'auth.last_name'.tr(),
                     controller: _lastNameController,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.person_outline),
+                    prefixIcon: const Icon(IconMapping.personOutline),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -194,7 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'auth.other_names'.tr(),
                     controller: _otherNamesController,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.people_outline),
+                    prefixIcon: const Icon(IconMapping.peopleOutline),
                     // Other names is optional, so no validator
                   ),
                   const SizedBox(height: 16),
@@ -205,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.email),
+                    prefixIcon: const Icon(IconMapping.email),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -224,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.phone),
+                    prefixIcon: const Icon(IconMapping.phone),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -297,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(Icons.lock),
+                    prefixIcon: const Icon(IconMapping.lock),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();
@@ -316,7 +317,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _confirmPasswordController,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: const Icon(IconMapping.lockOutline),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'errors.required_field'.tr();

@@ -6,6 +6,7 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../constants/icon_mapping.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
 
@@ -169,23 +170,23 @@ class ScaffoldWithBottomNav extends StatelessWidget {
         onTap: (index) => _onItemTapped(index, context),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(IconMapping.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.savings),
+            icon: Icon(IconMapping.savings),
             label: 'Savings',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.group),
+            icon: Icon(IconMapping.group),
             label: 'Groups',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
+            icon: Icon(IconMapping.barChart),
             label: 'Analytics',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(IconMapping.profile),
             label: 'Profile',
           ),
         ],
