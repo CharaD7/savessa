@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Color constants
-  static const Color royalPurple = Color(0xFF4A148C);
-  static const Color lightPurple = Color(0xFF7C43BD);
-  static const Color gold = Color(0xFFFFD700);
+  static const Color royalPurple = Color(0xFF6A0DAD); // Updated to match requirements
+  static const Color lightPurple = Color(0xFF8A2BE2); // Adjusted light purple to match new primary
+  static const Color gold = Color(0xFFFFD700); // Metallic Gold as specified
   static const Color lightGold = Color(0xFFFFF59D);
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
