@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
@@ -1340,7 +1341,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Colors.red, width: 2),
                   ),
-                  errorStyle: TextStyles.errorWithGlow(),
+                  errorStyle: TextStyles.phoneErrorStyle(),
                 ),
                 initialCountryCode: _selectedCountry.code,
                 style: const TextStyle(
@@ -1359,7 +1360,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                 flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
                 showDropdownIcon: false,
                 disableLengthCheck: false,
-                invalidNumberMessage: 'Invalid phone number',
+                invalidNumberMessage: 'Please enter a valid phone number',
                 onChanged: (phone) {
                   // Get the current text from the controller
                   final currentText = phone.number;
