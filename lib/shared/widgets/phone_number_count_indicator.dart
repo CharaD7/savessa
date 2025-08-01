@@ -42,8 +42,8 @@ class _PhoneNumberCountIndicatorState extends State<PhoneNumberCountIndicator> w
       duration: const Duration(milliseconds: 500),
     );
     
-    // Initialize animations
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    // Initialize animations with 30% smaller scale as per requirements
+    _scaleAnimation = Tween<double>(begin: 0.7, end: 0.84).animate(  // 0.7 is 30% smaller than 1.0, 0.84 is 30% smaller than 1.2
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.elasticOut,
@@ -128,7 +128,7 @@ class _PhoneNumberCountIndicatorState extends State<PhoneNumberCountIndicator> w
         
         final scale = widget.isMaxReached 
             ? _scaleAnimation.value 
-            : 1.0;
+            : 0.7;  // 30% smaller than 1.0 as per requirements
         
         return Transform.scale(
           scale: scale,
@@ -159,15 +159,7 @@ class _PhoneNumberCountIndicatorState extends State<PhoneNumberCountIndicator> w
                   ),
                 ),
                 
-                // Max reached indicator
-                if (widget.isMaxReached) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.check_circle,
-                    color: displayColor,
-                    size: 16,
-                  ),
-                ],
+                // No icons as per requirements
               ],
             ),
           ),
