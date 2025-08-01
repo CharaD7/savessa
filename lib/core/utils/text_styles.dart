@@ -36,6 +36,20 @@ class TextStyles {
     );
   }
   
+  /// Creates a TextStyle specifically for phone number error messages
+  /// with red text color, bold font, and reduced font size
+  static TextStyle phoneErrorStyle({TextStyle? baseStyle}) {
+    // Default base style if none provided
+    final style = baseStyle ?? const TextStyle();
+    
+    // Return the style with red color, bold font weight, and reduced font size
+    return style.copyWith(
+      color: Colors.red,
+      fontWeight: FontWeight.bold,
+      fontSize: (style.fontSize ?? 14) - 1, // Reduce font size by 1 point
+    );
+  }
+  
   /// Creates a TextStyle specifically for error messages with white text and bold red outline
   static TextStyle errorWithGlow({TextStyle? baseStyle}) {
     // Use a bright red color for the outline
