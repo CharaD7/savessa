@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
@@ -984,7 +985,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: Colors.red, width: 2),
                                 ),
-                                errorStyle: TextStyles.errorWithGlow(),
+                                errorStyle: TextStyles.phoneErrorStyle(),
                               ),
                               initialCountryCode: _selectedCountry.code,
                               style: const TextStyle(
@@ -1003,7 +1004,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                               flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
                               showDropdownIcon: false,
                               disableLengthCheck: false,
-                              invalidNumberMessage: 'errors.invalid_phone'.tr(),
+                              invalidNumberMessage: 'Please enter a valid phone number',
                               onChanged: (phone) {
                                 // Get the current text from the controller
                                 final currentText = phone.number;
