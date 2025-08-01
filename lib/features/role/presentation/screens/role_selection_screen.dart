@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/icon_mapping.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -22,14 +23,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
       'id': 'admin',
       'title': 'I manage savings',
       'subtitle': 'Create and manage savings groups',
-      'icon': Icons.admin_panel_settings,
+      'icon': IconMapping.settings,
       'description': 'As an admin, you can create savings groups, invite members, set contribution rules, and manage group activities.',
     },
     {
       'id': 'member',
       'title': 'I contribute savings',
       'subtitle': 'Join existing savings groups',
-      'icon': Icons.person,
+      'icon': IconMapping.person,
       'description': 'As a member, you can join savings groups, make contributions, track your savings, and participate in group activities.',
     },
   ];
@@ -67,9 +68,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
     _animationController.reset();
     _animationController.forward();
     
-    // Navigate to account setup after a short delay
+    // Navigate to register screen with selected role after a short delay
     Future.delayed(const Duration(milliseconds: 800), () {
-      context.go('/account-setup');
+      context.go('/register', extra: roleId);
     });
   }
 
@@ -237,6 +238,48 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                   ),
                 ),
                 
+                // Already have an account button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Already have an account?',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontSize: 14,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          context.go('/login');
+                        },
+                        child: Text(
+                          'Login',
+                          style: TextStyle(
+                            color: theme.colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                
                 // Back button
                 Center(
                   child: TextButton.icon(
@@ -244,7 +287,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                       context.go('/onboarding');
                     },
                     icon: Icon(
-                      Icons.arrow_back,
+                      IconMapping.arrowUpward,
                       color: theme.colorScheme.onPrimary,
                     ),
                     label: Text(

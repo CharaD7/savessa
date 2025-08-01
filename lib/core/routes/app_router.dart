@@ -77,7 +77,11 @@ class AppRouter {
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) {
+          // Extract the selected role from state.extra
+          final selectedRole = state.extra as String?;
+          return RegisterScreen(selectedRole: selectedRole);
+        },
       ),
       GoRoute(
         path: '/forgot-password',
@@ -181,10 +185,15 @@ class AppRouter {
       ),
     ],
     
-    // Redirect to login if not authenticated
+    // Redirect logic
     redirect: (context, state) {
-      // This will be implemented when authentication is set up
-      // For now, we'll just return null to allow all navigation
+      // Redirect from account-setup to login since we're no longer using the account setup screen
+      if (state.matchedLocation == '/account-setup') {
+        return '/login';
+      }
+      
+      // This will be expanded when authentication is set up
+      // For now, we'll just return null for other routes to allow all navigation
       return null;
     },
   );
