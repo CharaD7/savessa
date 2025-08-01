@@ -18,19 +18,25 @@ class PasswordStrengthIndicator extends StatelessWidget {
     
     // Calculate progress based on strength
     double progress = 0.0;
-    switch (strength) {
-      case PasswordStrength.weak:
-        progress = 0.25;
-        break;
-      case PasswordStrength.medium:
-        progress = 0.5;
-        break;
-      case PasswordStrength.strong:
-        progress = 0.75;
-        break;
-      case PasswordStrength.veryStrong:
-        progress = 1.0;
-        break;
+    
+    // If password length exceeds 12, fill to 100%
+    if (password.length > 12) {
+      progress = 1.0;
+    } else {
+      switch (strength) {
+        case PasswordStrength.weak:
+          progress = 0.25;
+          break;
+        case PasswordStrength.medium:
+          progress = 0.5;
+          break;
+        case PasswordStrength.strong:
+          progress = 0.75;
+          break;
+        case PasswordStrength.veryStrong:
+          progress = 1.0;
+          break;
+      }
     }
     
     return Column(
