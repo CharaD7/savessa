@@ -18,6 +18,7 @@ import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
 import '../../../../core/constants/icon_mapping.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/text_styles.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? selectedRole;
@@ -413,7 +414,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _emailFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your email is valid before continuing.'),
+          content: Text(
+            'Please ensure your email is valid before continuing.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -425,7 +429,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _confirmEmailFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your email confirmation matches.'),
+          content: Text(
+            'Please ensure your email confirmation matches.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -437,7 +444,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _passwordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your password meets all requirements.'),
+          content: Text(
+            'Please ensure your password meets all requirements.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -449,7 +459,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _confirmPasswordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your password confirmation matches.'),
+          content: Text(
+            'Please ensure your password confirmation matches.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -470,7 +483,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Email verification is required to register.'),
+            content: Text(
+              'Email verification is required to register.',
+              style: TextStyles.errorWithGlow(),
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -508,7 +524,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Email already registered. Please use a different email.'),
+            content: Text(
+              'Email already registered. Please use a different email.',
+              style: TextStyles.errorWithGlow(),
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -523,7 +542,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('auth.register_success'.tr()),
+          content: Text(
+            'auth.register_success'.tr(),
+            style: TextStyles.successWithGlow(),
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -536,7 +558,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Registration error: ${e.toString()}'),
+          content: Text(
+            'Registration error: ${e.toString()}',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -1004,7 +1029,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   // Show a message to the user
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Maximum digit count reached (${_requiredPhoneDigits})'),
+                                      content: Text(
+                                        'Maximum digit count reached ($_requiredPhoneDigits)',
+                                        style: TextStyles.withGlow(),
+                                      ),
                                       duration: const Duration(seconds: 1),
                                       backgroundColor: Colors.orange,
                                     ),

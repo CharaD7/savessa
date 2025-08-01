@@ -6,9 +6,9 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
+import '../../../../core/utils/text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
@@ -570,10 +570,13 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
+        SnackBar(
+          content: Text(
+            'Login successful!',
+            style: TextStyles.successWithGlow(),
+          ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
       
@@ -585,7 +588,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login error: ${e.toString()}'),
+          content: Text(
+            'Login error: ${e.toString()}',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -643,7 +649,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _contactFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your email is valid before continuing.'),
+          content: Text(
+            'Please ensure your email is valid before continuing.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -656,7 +665,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _passwordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your password meets all requirements.'),
+          content: Text(
+            'Please ensure your password meets all requirements.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -669,7 +681,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _confirmPasswordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please ensure your password confirmation matches.'),
+          content: Text(
+            'Please ensure your password confirmation matches.',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -693,10 +708,13 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
+        SnackBar(
+          content: Text(
+            'Account created successfully!',
+            style: TextStyles.successWithGlow(),
+          ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
       
@@ -708,7 +726,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Registration error: ${e.toString()}'),
+          content: Text(
+            'Registration error: ${e.toString()}',
+            style: TextStyles.errorWithGlow(),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -1364,7 +1385,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                     // Show a message to the user
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Maximum digit count reached (${_requiredPhoneDigits})'),
+                        content: Text(
+                          'Maximum digit count reached ($_requiredPhoneDigits)',
+                          style: TextStyles.withGlow(),
+                        ),
                         duration: const Duration(seconds: 1),
                         backgroundColor: Colors.orange,
                       ),
