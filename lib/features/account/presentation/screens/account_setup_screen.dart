@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io' show Platform;
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -12,6 +13,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
+import '../../../../shared/widgets/phone_number_count_indicator.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
@@ -56,6 +58,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   String _countryCode = '+1'; // Default country code (US)
   String _completePhoneNumber = ''; // Complete phone number with country code
   Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
+  int _phoneDigitCount = 0; // Current number of digits in phone number
+  int _requiredPhoneDigits = 10; // Required number of digits for selected country (default to US)
+  bool _isPhoneMaxReached = false; // Whether the maximum digit count has been reached
   
   // Focus nodes for login
   final _loginEmailFocus = FocusNode();
@@ -113,8 +118,67 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     }
   }
 
+  // Method to get the device's locale and map it to a country code
+  String _getDeviceLocale() {
+    try {
+      // Get the device's locale
+      final String localeName = Platform.localeName;
+      debugPrint('Device locale: $localeName');
+      
+      // Parse the locale to extract the country code
+      // Locale format is typically 'language_COUNTRY' (e.g., 'en_US')
+      final List<String> localeParts = localeName.split('_');
+      if (localeParts.length > 1) {
+        final String countryCode = localeParts[1];
+        
+        // Check if this country code exists in our countries list
+        try {
+          final bool countryExists = countries.any(
+            (c) => c.code.toLowerCase() == countryCode.toLowerCase()
+          );
+          
+          if (countryExists) {
+            debugPrint('Found country from device locale: $countryCode');
+            return countryCode;
+          }
+        } catch (e) {
+          debugPrint('Error checking country from locale: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting device locale: $e');
+    }
+    
+    // Return a default country code if we couldn't get a valid one from the locale
+    return 'US';
+  }
+
   // Method to get the current location and set the country
   Future<void> _detectUserCountry() async {
+    // First try to get the country from device settings
+    final String deviceCountryCode = _getDeviceLocale();
+    
+    // Try to find the country in the countries list
+    try {
+      final Country country = countries.firstWhere(
+        (c) => c.code.toLowerCase() == deviceCountryCode.toLowerCase(),
+        orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+      );
+      
+      // Update the selected country
+      setState(() {
+        _selectedCountry = country;
+        _countryCode = '+${country.dialCode}';
+      });
+      
+      debugPrint('Set country from device settings: ${country.name} (${country.code})');
+      return; // Exit early if we successfully set the country from device settings
+    } catch (e) {
+      debugPrint('Error finding country from device settings: $e');
+      // Continue to geolocation fallback
+    }
+    
+    // Fallback to geolocation if device settings didn't provide a valid country
     try {
       // Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
@@ -228,6 +292,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     
     // Detect user's country
     _detectUserCountry();
+    
+    // Initialize required phone digits based on default country
+    _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(_selectedCountry.code);
     
     // Delay initialization to prevent UI jank during animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1198,16 +1265,29 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  'Phone Number',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.normal,
-                    fontSize: 14,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Text(
+                      'Phone Number',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4, bottom: 8),
+                    child: PhoneNumberCountIndicator(
+                      currentCount: _phoneDigitCount,
+                      requiredCount: _requiredPhoneDigits,
+                      isMaxReached: _isPhoneMaxReached,
+                    ),
+                  ),
+                ],
               ),
               IntlPhoneField(
                 controller: _phoneController,
@@ -1250,30 +1330,86 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   fontWeight: FontWeight.w500,
                 ),
                 dropdownIcon: const Icon(
-                  IconMapping.arrowDownward,
+                  IconMapping.search,
                   color: Colors.white,
                   size: 18,
                 ),
                 flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
-                showDropdownIcon: true,
+                showDropdownIcon: false,
                 disableLengthCheck: false,
                 invalidNumberMessage: 'Invalid phone number',
                 onChanged: (phone) {
+                  // Get the current text from the controller
+                  final currentText = phone.number;
+                  
+                  // Check if we need to restrict input (max reached and trying to add more)
+                  if (_isPhoneMaxReached && currentText.length > _phoneDigitCount) {
+                    // User is trying to add more digits after max is reached
+                    // Revert to previous text by removing the last character
+                    final restrictedText = currentText.substring(0, _phoneDigitCount);
+                    
+                    // Update the controller with the restricted text
+                    // We need to use Future.microtask to avoid setState during build
+                    Future.microtask(() {
+                      // Set the selection to the end of the text
+                      final selection = TextSelection.collapsed(offset: restrictedText.length);
+                      
+                      // Update the controller
+                      _phoneController.value = TextEditingValue(
+                        text: restrictedText,
+                        selection: selection,
+                      );
+                    });
+                    
+                    // Show a message to the user
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Maximum digit count reached (${_requiredPhoneDigits})'),
+                        duration: const Duration(seconds: 1),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    
+                    return; // Don't update state
+                  }
+                  
                   setState(() {
                     _countryCode = phone.countryCode;
                     _completePhoneNumber = phone.completeNumber;
-                    // We don't update _selectedCountry here as it's handled in onCountryChanged
+                    
+                    // Update digit count
+                    _phoneDigitCount = currentText.length;
+                    
+                    // Check if max reached
+                    _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
+                    
+                    // Update validation status
                     _phoneValidationStatus = ValidationStatus.valid;
-                    _checkFieldCompletion('phone', phone.number);
+                    
+                    // Check field completion
+                    _checkFieldCompletion('phone', currentText);
                   });
                 },
                 onCountryChanged: (country) {
                   setState(() {
                     _countryCode = '+${country.dialCode}';
                     _selectedCountry = country;
+                    
+                    // Get the required digit count for this country using the helper method
+                    _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(country.code);
+                    
+                    // Reset max reached flag when country changes
+                    _isPhoneMaxReached = false;
+                    
                     // Update complete phone number
                     if (_phoneController.text.isNotEmpty) {
                       _completePhoneNumber = '$_countryCode${_phoneController.text}';
+                      
+                      // Update digit count and check if max reached
+                      _phoneDigitCount = _phoneController.text.length;
+                      _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
+                    } else {
+                      _phoneDigitCount = 0;
                     }
                   });
                 },
