@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:io' show Platform;
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
-import '../../../../core/utils/text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../shared/widgets/phone_number_count_indicator.dart';
+import '../../../../shared/widgets/auth/login_form.dart';
+import '../../../../shared/widgets/auth/signup_form.dart';
+import '../../../../shared/widgets/auth/role_type_indicator.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
@@ -47,46 +46,26 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   final _loginPasswordController = TextEditingController();
   
   // Text editing controllers for signup
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _middleNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
-  // Phone field variables
-  String _countryCode = '+1'; // Default country code (US)
-  String _completePhoneNumber = ''; // Complete phone number with country code
-  Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
-  int _phoneDigitCount = 0; // Current number of digits in phone number
-  int _requiredPhoneDigits = 10; // Required number of digits for selected country (default to US)
-  bool _isPhoneMaxReached = false; // Whether the maximum digit count has been reached
   
   // Focus nodes for login
   final _loginEmailFocus = FocusNode();
   final _loginPasswordFocus = FocusNode();
   
   // Focus nodes for signup
-  final _firstNameFocus = FocusNode();
-  final _lastNameFocus = FocusNode();
-  final _middleNameFocus = FocusNode();
+  final _nameFocus = FocusNode();
   final _contactFocus = FocusNode();
-  final _phoneFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmPasswordFocus = FocusNode();
   
   // Track which fields are completed
-  bool _firstNameCompleted = false;
-  bool _lastNameCompleted = false;
-  bool _middleNameCompleted = false;
+  bool _nameCompleted = false;
   bool _contactCompleted = false;
-  bool _phoneCompleted = false;
   bool _passwordCompleted = false;
   bool _confirmPasswordCompleted = false;
-  
-  // Validation status tracking
-  ValidationStatus _phoneValidationStatus = ValidationStatus.none;
   
   // Validation status tracking
   ValidationStatus _emailValidationStatus = ValidationStatus.none;
@@ -119,169 +98,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     }
   }
 
-  // Method to get the device's locale and map it to a country code
-  String _getDeviceLocale() {
-    try {
-      // Get the device's locale
-      final String localeName = Platform.localeName;
-      debugPrint('Device locale: $localeName');
-      
-      // Parse the locale to extract the country code
-      // Locale format is typically 'language_COUNTRY' (e.g., 'en_US')
-      final List<String> localeParts = localeName.split('_');
-      if (localeParts.length > 1) {
-        final String countryCode = localeParts[1];
-        
-        // Check if this country code exists in our countries list
-        try {
-          final bool countryExists = countries.any(
-            (c) => c.code.toLowerCase() == countryCode.toLowerCase()
-          );
-          
-          if (countryExists) {
-            debugPrint('Found country from device locale: $countryCode');
-            return countryCode;
-          }
-        } catch (e) {
-          debugPrint('Error checking country from locale: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error getting device locale: $e');
-    }
-    
-    // Return a default country code if we couldn't get a valid one from the locale
-    return 'US';
-  }
-
-  // Method to get the current location and set the country
-  Future<void> _detectUserCountry() async {
-    // First try to get the country from device settings
-    final String deviceCountryCode = _getDeviceLocale();
-    
-    // Try to find the country in the countries list
-    try {
-      final Country country = countries.firstWhere(
-        (c) => c.code.toLowerCase() == deviceCountryCode.toLowerCase(),
-        orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
-      );
-      
-      // Update the selected country
-      setState(() {
-        _selectedCountry = country;
-        _countryCode = '+${country.dialCode}';
-      });
-      
-      debugPrint('Set country from device settings: ${country.name} (${country.code})');
-      return; // Exit early if we successfully set the country from device settings
-    } catch (e) {
-      debugPrint('Error finding country from device settings: $e');
-      // Continue to geolocation fallback
-    }
-    
-    // Fallback to geolocation if device settings didn't provide a valid country
-    try {
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          // Permissions are denied, use default country
-          debugPrint('Location permissions are denied, using default country');
-          return;
-        }
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        // Permissions are permanently denied, use default country
-        debugPrint('Location permissions are permanently denied, using default country');
-        return;
-      }
-      
-      // Get current position
-      final Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
-        timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
-      );
-      
-      // Use the position to determine the country
-      final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
-      
-      // Find the country in the countries list
-      try {
-        final Country country = countries.firstWhere(
-          (c) => c.code.toLowerCase() == countryCode.toLowerCase(),
-          orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
-        );
-        
-        // Update the selected country
-        setState(() {
-          _selectedCountry = country;
-          _countryCode = '+${country.dialCode}';
-        });
-        
-        debugPrint('Detected country: ${country.name} (${country.code})');
-      } catch (e) {
-        debugPrint('Error finding country: $e');
-      }
-    } catch (e) {
-      debugPrint('Error detecting user country: $e');
-    }
-  }
-  
-  // Method to get country code from coordinates
-  Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
-    // For demonstration purposes, we'll use a very simplified approach
-    // In a real app, you would use a geocoding service like Google Maps Geocoding API
-    
-    // North America (roughly)
-    if (latitude > 15 && latitude < 70 && longitude > -170 && longitude < -50) {
-      if (latitude > 25 && latitude < 50 && longitude > -125 && longitude < -65) {
-        return 'US'; // United States
-      } else if (latitude > 45 && latitude < 70 && longitude > -140 && longitude < -50) {
-        return 'CA'; // Canada
-      } else if (latitude > 15 && latitude < 32 && longitude > -120 && longitude < -85) {
-        return 'MX'; // Mexico
-      }
-    }
-    
-    // Europe (roughly)
-    if (latitude > 35 && latitude < 70 && longitude > -10 && longitude < 40) {
-      if (latitude > 48 && latitude < 55 && longitude > -10 && longitude < 2) {
-        return 'GB'; // United Kingdom
-      } else if (latitude > 42 && latitude < 51 && longitude > -5 && longitude < 10) {
-        return 'FR'; // France
-      } else if (latitude > 47 && latitude < 55 && longitude > 5 && longitude < 15) {
-        return 'DE'; // Germany
-      }
-    }
-    
-    // Africa (roughly)
-    if (latitude > -35 && latitude < 35 && longitude > -20 && longitude < 50) {
-      if (latitude > 4 && latitude < 12 && longitude > -5 && longitude < 4) {
-        return 'GH'; // Ghana
-      } else if (latitude > 25 && latitude < 32 && longitude > 25 && longitude < 35) {
-        return 'EG'; // Egypt
-      } else if (latitude > -35 && latitude < -22 && longitude > 15 && longitude < 35) {
-        return 'ZA'; // South Africa
-      }
-    }
-    
-    // Asia (roughly)
-    if (latitude > 0 && latitude < 70 && longitude > 60 && longitude < 180) {
-      if (latitude > 20 && latitude < 40 && longitude > 70 && longitude < 135) {
-        return 'CN'; // China
-      } else if (latitude > 20 && latitude < 45 && longitude > 125 && longitude < 150) {
-        return 'JP'; // Japan
-      } else if (latitude > 5 && latitude < 20 && longitude > 95 && longitude < 105) {
-        return 'TH'; // Thailand
-      }
-    }
-    
-    // Default to US if we can't determine the country
-    return 'US';
-  }
-
   @override
   void initState() {
     super.initState();
@@ -290,12 +106,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     if (widget.selectedRole != null) {
       _selectedRole = widget.selectedRole!;
     }
-    
-    // Detect user's country
-    _detectUserCountry();
-    
-    // Initialize required phone digits based on default country
-    _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(_selectedCountry.code);
     
     // Delay initialization to prevent UI jank during animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -315,11 +125,8 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         // Add listeners to all focus nodes using the centralized handler
         _loginEmailFocus.addListener(() => _handleFocusChange(_loginEmailFocus, 'login_email'));
         _loginPasswordFocus.addListener(() => _handleFocusChange(_loginPasswordFocus, 'login_password'));
-        _firstNameFocus.addListener(() => _handleFocusChange(_firstNameFocus, 'firstName'));
-        _lastNameFocus.addListener(() => _handleFocusChange(_lastNameFocus, 'lastName'));
-        _middleNameFocus.addListener(() => _handleFocusChange(_middleNameFocus, 'middleName'));
+        _nameFocus.addListener(() => _handleFocusChange(_nameFocus, 'name'));
         _contactFocus.addListener(() => _handleFocusChange(_contactFocus, 'contact'));
-        _phoneFocus.addListener(() => _handleFocusChange(_phoneFocus, 'phone'));
         _passwordFocus.addListener(() => _handleFocusChange(_passwordFocus, 'password'));
         _confirmPasswordFocus.addListener(() => _handleFocusChange(_confirmPasswordFocus, 'confirm_password'));
       }
@@ -335,19 +142,12 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     _loginPasswordFocus.dispose();
     
     // Dispose signup controllers and focus nodes
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _middleNameController.dispose();
+    _nameController.dispose();
     _contactController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    
-    _firstNameFocus.dispose();
-    _lastNameFocus.dispose();
-    _middleNameFocus.dispose();
+    _nameFocus.dispose();
     _contactFocus.dispose();
-    _phoneFocus.dispose();
     _passwordFocus.dispose();
     _confirmPasswordFocus.dispose();
     
@@ -369,14 +169,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _emailValidationStatus = ValidationStatus.none;
       _passwordValidationStatus = ValidationStatus.none;
       _confirmPasswordValidationStatus = ValidationStatus.none;
-      _phoneValidationStatus = ValidationStatus.none;
       
       // Reset field completion status
-      _firstNameCompleted = false;
-      _lastNameCompleted = false;
-      _middleNameCompleted = false;
+      _nameCompleted = false;
       _contactCompleted = false;
-      _phoneCompleted = false;
       _passwordCompleted = false;
       _confirmPasswordCompleted = false;
       
@@ -387,11 +183,8 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         _loginPasswordController.clear();
       } else {
         // Switching to login mode, clear signup fields
-        _firstNameController.clear();
-        _lastNameController.clear();
-        _middleNameController.clear();
+        _nameController.clear();
         _contactController.clear();
-        _phoneController.clear();
         _passwordController.clear();
         _confirmPasswordController.clear();
       }
@@ -403,7 +196,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         if (_isLoginMode) {
           _loginEmailFocus.requestFocus();
         } else {
-          _firstNameFocus.requestFocus();
+          _nameFocus.requestFocus();
         }
       }
     });
@@ -432,25 +225,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       bool stateChanged = false;
       
       switch (field) {
-        case 'firstName':
+        case 'name':
           isCompleted = value.trim().isNotEmpty;
-          if (isCompleted != _firstNameCompleted) {
-            _firstNameCompleted = isCompleted;
-            stateChanged = true;
-          }
-          break;
-        case 'lastName':
-          isCompleted = value.trim().isNotEmpty;
-          if (isCompleted != _lastNameCompleted) {
-            _lastNameCompleted = isCompleted;
-            stateChanged = true;
-          }
-          break;
-        case 'middleName':
-          // Middle name is optional, so always mark as completed if it has any value
-          isCompleted = true;
-          if (isCompleted != _middleNameCompleted) {
-            _middleNameCompleted = isCompleted;
+          if (isCompleted != _nameCompleted) {
+            _nameCompleted = isCompleted;
             stateChanged = true;
           }
           break;
@@ -460,14 +238,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
           isCompleted = value.trim().isNotEmpty && value.contains('@') && value.contains('.');
           if (isCompleted != _contactCompleted) {
             _contactCompleted = isCompleted;
-            stateChanged = true;
-          }
-          break;
-        case 'phone':
-          // Phone validation
-          isCompleted = value.trim().isNotEmpty;
-          if (isCompleted != _phoneCompleted) {
-            _phoneCompleted = isCompleted;
             stateChanged = true;
           }
           break;
@@ -571,13 +341,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Login successful!',
-            style: TextStyles.successWithGlow(),
-          ),
+        const SnackBar(
+          content: Text('Login successful!'),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
       
@@ -589,10 +356,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Login error: ${e.toString()}',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: Text('Login error: ${e.toString()}'),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -622,17 +386,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     // First check if the form is valid using standard validation
     if (!_signupFormKey.currentState!.validate()) {
       // Find the first field with an error and focus it
-      if (_firstNameController.text.isEmpty) {
-        _firstNameFocus.requestFocus();
-        return;
-      } else if (_lastNameController.text.isEmpty) {
-        _lastNameFocus.requestFocus();
+      if (_nameController.text.isEmpty) {
+        _nameFocus.requestFocus();
         return;
       } else if (_contactController.text.isEmpty) {
         _contactFocus.requestFocus();
-        return;
-      } else if (_phoneController.text.isEmpty) {
-        _phoneFocus.requestFocus();
         return;
       } else if (_passwordController.text.isEmpty) {
         _passwordFocus.requestFocus();
@@ -650,10 +408,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _contactFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your email is valid before continuing.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your email is valid before continuing.'),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -666,10 +421,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _passwordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your password meets all requirements.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your password meets all requirements.'),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -682,10 +434,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _confirmPasswordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your password confirmation matches.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your password confirmation matches.'),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -709,13 +458,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Account created successfully!',
-            style: TextStyles.successWithGlow(),
-          ),
+        const SnackBar(
+          content: Text('Account created successfully!'),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
       
@@ -727,10 +473,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Registration error: ${e.toString()}',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: Text('Registration error: ${e.toString()}'),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
@@ -742,7 +485,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       });
       
       // Focus on the first field for retry
-      _firstNameFocus.requestFocus();
+      _nameFocus.requestFocus();
     } finally {
       if (mounted && _isLoading) {
         setState(() {
@@ -985,38 +728,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 16),
                   
                   // Role indication
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          IconMapping.person,
-                          color: theme.colorScheme.secondary,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _selectedRole == 'admin'
-                                ? 'Setting up as: Savings Manager'
-                                : 'Setting up as: Savings Contributor',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  RoleTypeIndicator(
+                    role: _selectedRole,
+                    prefix: 'Setting up as:',
+                    colorScheme: theme.colorScheme,
                   ),
                   
                   const SizedBox(height: 16),
@@ -1073,522 +788,35 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Build login form
   Widget _buildLoginForm() {
-    return Form(
-      key: _loginFormKey,
-      child: Column(
-        children: [
-          // Email field
-          ValidatedTextField(
-            label: 'Email',
-            controller: _loginEmailController,
-            focusNode: _loginEmailFocus,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.email),
-            required: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!value.contains('@')) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(_loginPasswordFocus);
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Password field
-          ValidatedTextField(
-            label: 'Password',
-            controller: _loginPasswordController,
-            focusNode: _loginPasswordFocus,
-            obscureText: true,
-            textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(IconMapping.lock),
-            required: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
-            onFieldSubmitted: (_) {
-              _login();
-            },
-          ),
-          const SizedBox(height: 8),
-          
-          // Forgot password link
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                context.go('/forgot-password');
-              },
-              child: Text(
-                'Forgot Password?',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Login button
-          AppButton(
-            label: 'Login',
-            onPressed: _login,
-            type: ButtonType.primary,
-            isFullWidth: true,
-            height: 56,
-            borderRadius: 12,
-            isLoading: _isLoading,
-          ),
-        ],
-      ),
+    return LoginForm(
+      formKey: _loginFormKey,
+      emailController: _loginEmailController,
+      passwordController: _loginPasswordController,
+      emailFocus: _loginEmailFocus,
+      passwordFocus: _loginPasswordFocus,
+      isLoading: _isLoading,
+      onLogin: _login,
+      colorScheme: Theme.of(context).colorScheme,
     );
   }
   
   // Build signup form
   Widget _buildSignupForm() {
-    return Form(
-      key: _signupFormKey,
-      child: Column(
-        children: [
-          // First name field
-          AppTextField(
-            controller: _firstNameController,
-            focusNode: _firstNameFocus,
-            label: 'First Name',
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.person),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'This field is required';
-              }
-              return null;
-            },
-            onChanged: (value) {
-              _checkFieldCompletion('firstName', value);
-            },
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(_lastNameFocus);
-            },
-            suffixIcon: _firstNameCompleted ? const Icon(IconMapping.checkCircle) : null,
-          ),
-          const SizedBox(height: 16),
-          
-          // Last name field
-          AppTextField(
-            controller: _lastNameController,
-            focusNode: _lastNameFocus,
-            label: 'Last Name',
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.personOutline),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'This field is required';
-              }
-              return null;
-            },
-            onChanged: (value) {
-              _checkFieldCompletion('lastName', value);
-            },
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(_middleNameFocus);
-            },
-            suffixIcon: _lastNameCompleted ? const Icon(IconMapping.checkCircle) : null,
-          ),
-          const SizedBox(height: 16),
-          
-          // Middle name field (optional)
-          AppTextField(
-            controller: _middleNameController,
-            focusNode: _middleNameFocus,
-            label: 'Middle Name (Optional)',
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.peopleOutline),
-            onChanged: (value) {
-              _checkFieldCompletion('middleName', value);
-            },
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(_contactFocus);
-            },
-            suffixIcon: _middleNameCompleted ? const Icon(IconMapping.checkCircle) : null,
-            // Middle name is optional, so no validator
-          ),
-          const SizedBox(height: 16),
-          
-          // Contact/Email field with validation
-          ValidatedTextField(
-            label: 'Email',
-            controller: _contactController,
-            focusNode: _contactFocus,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.email),
-            required: true,
-            showValidationStatus: true,
-            preventNextIfInvalid: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              
-              final emailValidator = EmailValidatorService();
-              if (!emailValidator.isValidFormat(value)) {
-                return 'Please enter a valid email';
-              }
-              
-              return null;
-            },
-            asyncValidator: (value) async {
-              final emailValidator = EmailValidatorService();
-              
-              // First check if email is already registered
-              final isRegistered = await emailValidator.isEmailRegistered(value);
-              if (isRegistered) {
-                return (false, 'Email already registered. Please use a different email.');
-              }
-              
-              // Then validate email existence and activity
-              return await emailValidator.validateEmail(value);
-            },
-            onChanged: (value) {
-              // Reset validation status when text changes
-              setState(() {
-                _emailValidationStatus = ValidationStatus.none;
-                _checkFieldCompletion('contact', value);
-              });
-            },
-            onValidationComplete: (status) {
-              // Update validation status when validation completes
-              setState(() {
-                _emailValidationStatus = status;
-                
-                // If valid, move to next field
-                if (_emailValidationStatus == ValidationStatus.valid) {
-                  _passwordFocus.requestFocus();
-                }
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Phone field with country selector
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text(
-                      'Phone Number',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.normal,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4, bottom: 8),
-                    child: PhoneNumberCountIndicator(
-                      currentCount: _phoneDigitCount,
-                      requiredCount: _requiredPhoneDigits,
-                      isMaxReached: _isPhoneMaxReached,
-                    ),
-                  ),
-                ],
-              ),
-              IntlPhoneField(
-                controller: _phoneController,
-                focusNode: _phoneFocus,
-                decoration: InputDecoration(
-                  hintText: 'Enter phone number',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.gold, width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                  ),
-                  errorStyle: TextStyles.phoneErrorStyle(),
-                ),
-                initialCountryCode: _selectedCountry.code,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-                dropdownTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-                dropdownIcon: const Icon(
-                  IconMapping.search,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
-                showDropdownIcon: false,
-                disableLengthCheck: false,
-                invalidNumberMessage: 'Please enter a valid phone number',
-                onChanged: (phone) {
-                  // Get the current text from the controller
-                  final currentText = phone.number;
-                  
-                  // Check if we need to restrict input (max reached and trying to add more)
-                  if (_isPhoneMaxReached && currentText.length > _phoneDigitCount) {
-                    // User is trying to add more digits after max is reached
-                    // Revert to previous text by removing the last character
-                    final restrictedText = currentText.substring(0, _phoneDigitCount);
-                    
-                    // Update the controller with the restricted text
-                    // We need to use Future.microtask to avoid setState during build
-                    Future.microtask(() {
-                      // Set the selection to the end of the text
-                      final selection = TextSelection.collapsed(offset: restrictedText.length);
-                      
-                      // Update the controller
-                      _phoneController.value = TextEditingValue(
-                        text: restrictedText,
-                        selection: selection,
-                      );
-                    });
-                    
-                    // Show a message to the user
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Maximum digit count reached ($_requiredPhoneDigits)',
-                          style: TextStyles.withGlow(),
-                        ),
-                        duration: const Duration(seconds: 1),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                    
-                    return; // Don't update state
-                  }
-                  
-                  setState(() {
-                    _countryCode = phone.countryCode;
-                    _completePhoneNumber = phone.completeNumber;
-                    
-                    // Update digit count
-                    _phoneDigitCount = currentText.length;
-                    
-                    // Check if max reached
-                    _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
-                    
-                    // Update validation status
-                    _phoneValidationStatus = ValidationStatus.valid;
-                    
-                    // Check field completion
-                    _checkFieldCompletion('phone', currentText);
-                  });
-                },
-                onCountryChanged: (country) {
-                  setState(() {
-                    _countryCode = '+${country.dialCode}';
-                    _selectedCountry = country;
-                    
-                    // Get the required digit count for this country using the helper method
-                    _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(country.code);
-                    
-                    // Reset max reached flag when country changes
-                    _isPhoneMaxReached = false;
-                    
-                    // Update complete phone number
-                    if (_phoneController.text.isNotEmpty) {
-                      _completePhoneNumber = '$_countryCode${_phoneController.text}';
-                      
-                      // Update digit count and check if max reached
-                      _phoneDigitCount = _phoneController.text.length;
-                      _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
-                    } else {
-                      _phoneDigitCount = 0;
-                    }
-                  });
-                },
-                validator: (phone) {
-                  // Use the static method from PhoneValidatorService
-                  final errorMessage = PhoneValidatorService.validateIntlPhone(phone, _selectedCountry);
-                  
-                  // Update validation status based on result
-                  setState(() {
-                    _phoneValidationStatus = errorMessage == null 
-                        ? ValidationStatus.valid 
-                        : ValidationStatus.invalid;
-                  });
-                  
-                  return errorMessage;
-                },
-                onSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocus);
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Password field with validation
-          ValidatedTextField(
-            label: 'Password',
-            controller: _passwordController,
-            focusNode: _passwordFocus,
-            obscureText: true,
-            textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(IconMapping.lock),
-            required: true,
-            showValidationStatus: true,
-            preventNextIfInvalid: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a password';
-              }
-              
-              final passwordValidator = PasswordValidatorService();
-              final (isPolicyValid, policyError) = passwordValidator.validatePolicy(value);
-              if (!isPolicyValid) {
-                return policyError;
-              }
-              
-              return null;
-            },
-            asyncValidator: (value) async {
-              final passwordValidator = PasswordValidatorService();
-              return await passwordValidator.checkCompromised(value);
-            },
-            onChanged: (value) {
-              // Force rebuild to update password strength indicator
-              setState(() {
-                // Only reset password validation status if the field is empty
-                if (value.isEmpty) {
-                  _passwordValidationStatus = ValidationStatus.none;
-                }
-                
-                _checkFieldCompletion('password', value);
-                
-                // If confirm password field is not empty, update its validation status
-                if (_confirmPasswordController.text.isNotEmpty) {
-                  // If passwords match, set confirm password validation to valid
-                  if (_confirmPasswordController.text == value) {
-                    _confirmPasswordValidationStatus = ValidationStatus.valid;
-                    _confirmPasswordCompleted = true;
-                  } else {
-                    // If passwords don't match, set confirm password validation to invalid
-                    _confirmPasswordValidationStatus = ValidationStatus.invalid;
-                    _confirmPasswordCompleted = false;
-                  }
-                  
-                  // Trigger validation for confirm password field
-                  _signupFormKey.currentState?.validate();
-                }
-              });
-            },
-            onValidationComplete: (status) {
-              // Update validation status when validation completes
-              setState(() {
-                _passwordValidationStatus = status;
-                
-                // If valid, move to next field
-                if (_passwordValidationStatus == ValidationStatus.valid) {
-                  _confirmPasswordFocus.requestFocus();
-                }
-              });
-            },
-          ),
-          
-          // Password strength indicator
-          if (_passwordController.text.isNotEmpty)
-            _buildPasswordStrengthIndicator(),
-          const SizedBox(height: 16),
-          
-          // Confirm password field
-          ValidatedTextField(
-            label: 'Confirm Password',
-            controller: _confirmPasswordController,
-            focusNode: _confirmPasswordFocus,
-            obscureText: true,
-            textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(IconMapping.lockOutline),
-            required: true,
-            showValidationStatus: true,
-            preventNextIfInvalid: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please confirm your password';
-              }
-              if (value != _passwordController.text) {
-                return 'Passwords do not match';
-              }
-              return null;
-            },
-            // Listen for changes to update validation status in real-time
-            onChanged: (value) {
-              // Update validation status based on whether passwords match
-              setState(() {
-                if (value.isEmpty) {
-                  _confirmPasswordValidationStatus = ValidationStatus.none;
-                  _confirmPasswordCompleted = false;
-                } else if (value == _passwordController.text) {
-                  _confirmPasswordValidationStatus = ValidationStatus.valid;
-                  _confirmPasswordCompleted = true;
-                } else {
-                  _confirmPasswordValidationStatus = ValidationStatus.invalid;
-                  _confirmPasswordCompleted = false;
-                }
-              });
-            },
-            onFieldSubmitted: (_) {
-              if (_confirmPasswordValidationStatus == ValidationStatus.valid) {
-                _signup();
-              }
-            },
-          ),
-          const SizedBox(height: 24),
-          
-          // Signup button
-          AppButton(
-            label: 'Create Account',
-            onPressed: _signup,
-            type: ButtonType.primary,
-            isFullWidth: true,
-            height: 56,
-            borderRadius: 12,
-            isLoading: _isLoading,
-          ),
-        ],
-      ),
+    return SignUpForm(
+      formKey: _signupFormKey,
+      nameController: _nameController,
+      emailController: _contactController,
+      passwordController: _passwordController,
+      confirmPasswordController: _confirmPasswordController,
+      nameFocus: _nameFocus,
+      emailFocus: _contactFocus,
+      passwordFocus: _passwordFocus,
+      confirmPasswordFocus: _confirmPasswordFocus,
+      isLoading: _isLoading,
+      onSignup: _signup,
+      onFieldCompleted: _checkFieldCompletion,
+      colorScheme: Theme.of(context).colorScheme,
+      signupButtonLabel: 'Create Account',
     );
   }
 }
