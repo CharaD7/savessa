@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'loaders/gradient_square_loader.dart';
 
 enum ButtonType { primary, secondary, text }
 
@@ -41,17 +42,12 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8.0),
         ],
         if (isLoading) ...[
-          SizedBox(
-            height: 24,
-            width: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.0,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                type == ButtonType.primary
-                    ? Colors.white
-                    : theme.colorScheme.primary,
-              ),
-            ),
+          GradientSquareLoader(
+            size: 24,
+            color1: type == ButtonType.primary
+                ? Colors.white
+                : theme.colorScheme.primary,
+            animationDurationMs: 1200,
           ),
           const SizedBox(width: 8.0),
         ],

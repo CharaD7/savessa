@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:feather_icons/feather_icons.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/countries.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
+import '../../../../shared/widgets/password_strength_indicator.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
+import '../../../../services/validation/phone_validator_service.dart';
 
 class AccountSetupScreen extends StatefulWidget {
-  const AccountSetupScreen({super.key});
+  final String? selectedRole;
+  
+  const AccountSetupScreen({
+    super.key,
+    this.selectedRole,
+  });
 
   @override
   State<AccountSetupScreen> createState() => _AccountSetupScreenState();
@@ -24,31 +36,51 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   // Mode selection (login or signup)
   bool _isLoginMode = false;
   
+  // Selected role
+  String _selectedRole = 'member'; // Default role
+  
   // Text editing controllers for login
   final _loginEmailController = TextEditingController();
   final _loginPasswordController = TextEditingController();
   
   // Text editing controllers for signup
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
   final _contactController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
+  // Phone field variables
+  String _countryCode = '+1'; // Default country code (US)
+  String _completePhoneNumber = ''; // Complete phone number with country code
+  Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
   
   // Focus nodes for login
   final _loginEmailFocus = FocusNode();
   final _loginPasswordFocus = FocusNode();
   
   // Focus nodes for signup
-  final _nameFocus = FocusNode();
+  final _firstNameFocus = FocusNode();
+  final _lastNameFocus = FocusNode();
+  final _middleNameFocus = FocusNode();
   final _contactFocus = FocusNode();
+  final _phoneFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmPasswordFocus = FocusNode();
   
   // Track which fields are completed
-  bool _nameCompleted = false;
+  bool _firstNameCompleted = false;
+  bool _lastNameCompleted = false;
+  bool _middleNameCompleted = false;
   bool _contactCompleted = false;
+  bool _phoneCompleted = false;
   bool _passwordCompleted = false;
   bool _confirmPasswordCompleted = false;
+  
+  // Validation status tracking
+  ValidationStatus _phoneValidationStatus = ValidationStatus.none;
   
   // Validation status tracking
   ValidationStatus _emailValidationStatus = ValidationStatus.none;
@@ -67,87 +99,161 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   // Loading state
   bool _isLoading = false;
   
+  // Centralized focus handler to reduce setState calls
+  void _handleFocusChange(FocusNode node, String fieldName) {
+    if (node.hasFocus && _currentField != fieldName) {
+      // Only update state if the field has changed
+      setState(() {
+        _currentField = fieldName;
+      });
+      
+      if (_voiceGuidanceEnabled) {
+        _playFieldGuidance(fieldName);
+      }
+    }
+  }
+
+  // Method to get the current location and set the country
+  Future<void> _detectUserCountry() async {
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Permissions are denied, use default country
+          debugPrint('Location permissions are denied, using default country');
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are permanently denied, use default country
+        debugPrint('Location permissions are permanently denied, using default country');
+        return;
+      }
+      
+      // Get current position
+      final Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
+        timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
+      );
+      
+      // Use the position to determine the country
+      final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
+      
+      // Find the country in the countries list
+      try {
+        final Country country = countries.firstWhere(
+          (c) => c.code.toLowerCase() == countryCode.toLowerCase(),
+          orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+        );
+        
+        // Update the selected country
+        setState(() {
+          _selectedCountry = country;
+          _countryCode = '+${country.dialCode}';
+        });
+        
+        debugPrint('Detected country: ${country.name} (${country.code})');
+      } catch (e) {
+        debugPrint('Error finding country: $e');
+      }
+    } catch (e) {
+      debugPrint('Error detecting user country: $e');
+    }
+  }
+  
+  // Method to get country code from coordinates
+  Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
+    // For demonstration purposes, we'll use a very simplified approach
+    // In a real app, you would use a geocoding service like Google Maps Geocoding API
+    
+    // North America (roughly)
+    if (latitude > 15 && latitude < 70 && longitude > -170 && longitude < -50) {
+      if (latitude > 25 && latitude < 50 && longitude > -125 && longitude < -65) {
+        return 'US'; // United States
+      } else if (latitude > 45 && latitude < 70 && longitude > -140 && longitude < -50) {
+        return 'CA'; // Canada
+      } else if (latitude > 15 && latitude < 32 && longitude > -120 && longitude < -85) {
+        return 'MX'; // Mexico
+      }
+    }
+    
+    // Europe (roughly)
+    if (latitude > 35 && latitude < 70 && longitude > -10 && longitude < 40) {
+      if (latitude > 48 && latitude < 55 && longitude > -10 && longitude < 2) {
+        return 'GB'; // United Kingdom
+      } else if (latitude > 42 && latitude < 51 && longitude > -5 && longitude < 10) {
+        return 'FR'; // France
+      } else if (latitude > 47 && latitude < 55 && longitude > 5 && longitude < 15) {
+        return 'DE'; // Germany
+      }
+    }
+    
+    // Africa (roughly)
+    if (latitude > -35 && latitude < 35 && longitude > -20 && longitude < 50) {
+      if (latitude > 4 && latitude < 12 && longitude > -5 && longitude < 4) {
+        return 'GH'; // Ghana
+      } else if (latitude > 25 && latitude < 32 && longitude > 25 && longitude < 35) {
+        return 'EG'; // Egypt
+      } else if (latitude > -35 && latitude < -22 && longitude > 15 && longitude < 35) {
+        return 'ZA'; // South Africa
+      }
+    }
+    
+    // Asia (roughly)
+    if (latitude > 0 && latitude < 70 && longitude > 60 && longitude < 180) {
+      if (latitude > 20 && latitude < 40 && longitude > 70 && longitude < 135) {
+        return 'CN'; // China
+      } else if (latitude > 20 && latitude < 45 && longitude > 125 && longitude < 150) {
+        return 'JP'; // Japan
+      } else if (latitude > 5 && latitude < 20 && longitude > 95 && longitude < 105) {
+        return 'TH'; // Thailand
+      }
+    }
+    
+    // Default to US if we can't determine the country
+    return 'US';
+  }
+
   @override
   void initState() {
     super.initState();
     
-    // Set system UI to be transparent for fullscreen effect
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    // Set selected role from widget parameter if provided
+    if (widget.selectedRole != null) {
+      _selectedRole = widget.selectedRole!;
+    }
     
-    // Initialize animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
+    // Detect user's country
+    _detectUserCountry();
     
-    // Add listeners to login focus nodes
-    _loginEmailFocus.addListener(() {
-      if (_loginEmailFocus.hasFocus) {
-        setState(() {
-          _currentField = 'login_email';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('email');
-        }
-      }
-    });
-    
-    _loginPasswordFocus.addListener(() {
-      if (_loginPasswordFocus.hasFocus) {
-        setState(() {
-          _currentField = 'login_password';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('password');
-        }
-      }
-    });
-    
-    // Add listeners to signup focus nodes
-    _nameFocus.addListener(() {
-      if (_nameFocus.hasFocus) {
-        setState(() {
-          _currentField = 'name';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('name');
-        }
-      }
-    });
-    
-    _contactFocus.addListener(() {
-      if (_contactFocus.hasFocus) {
-        setState(() {
-          _currentField = 'contact';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('contact');
-        }
-      }
-    });
-    
-    _passwordFocus.addListener(() {
-      if (_passwordFocus.hasFocus) {
-        setState(() {
-          _currentField = 'password';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('password');
-        }
-      }
-    });
-    
-    _confirmPasswordFocus.addListener(() {
-      if (_confirmPasswordFocus.hasFocus) {
-        setState(() {
-          _currentField = 'confirm_password';
-        });
-        if (_voiceGuidanceEnabled) {
-          _playFieldGuidance('confirm_password');
-        }
+    // Delay initialization to prevent UI jank during animation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Set system UI to be transparent for fullscreen effect
+        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ));
+        
+        // Initialize animation controller
+        _animationController = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 300),
+        );
+        
+        // Add listeners to all focus nodes using the centralized handler
+        _loginEmailFocus.addListener(() => _handleFocusChange(_loginEmailFocus, 'login_email'));
+        _loginPasswordFocus.addListener(() => _handleFocusChange(_loginPasswordFocus, 'login_password'));
+        _firstNameFocus.addListener(() => _handleFocusChange(_firstNameFocus, 'firstName'));
+        _lastNameFocus.addListener(() => _handleFocusChange(_lastNameFocus, 'lastName'));
+        _middleNameFocus.addListener(() => _handleFocusChange(_middleNameFocus, 'middleName'));
+        _contactFocus.addListener(() => _handleFocusChange(_contactFocus, 'contact'));
+        _phoneFocus.addListener(() => _handleFocusChange(_phoneFocus, 'phone'));
+        _passwordFocus.addListener(() => _handleFocusChange(_passwordFocus, 'password'));
+        _confirmPasswordFocus.addListener(() => _handleFocusChange(_confirmPasswordFocus, 'confirm_password'));
       }
     });
   }
@@ -161,12 +267,19 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     _loginPasswordFocus.dispose();
     
     // Dispose signup controllers and focus nodes
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
     _contactController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _nameFocus.dispose();
+    
+    _firstNameFocus.dispose();
+    _lastNameFocus.dispose();
+    _middleNameFocus.dispose();
     _contactFocus.dispose();
+    _phoneFocus.dispose();
     _passwordFocus.dispose();
     _confirmPasswordFocus.dispose();
     
@@ -178,6 +291,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Toggle between login and signup modes
   void _toggleMode() {
+    // Dismiss keyboard when switching modes
+    FocusScope.of(context).unfocus();
+    
     setState(() {
       _isLoginMode = !_isLoginMode;
       
@@ -185,6 +301,43 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _emailValidationStatus = ValidationStatus.none;
       _passwordValidationStatus = ValidationStatus.none;
       _confirmPasswordValidationStatus = ValidationStatus.none;
+      _phoneValidationStatus = ValidationStatus.none;
+      
+      // Reset field completion status
+      _firstNameCompleted = false;
+      _lastNameCompleted = false;
+      _middleNameCompleted = false;
+      _contactCompleted = false;
+      _phoneCompleted = false;
+      _passwordCompleted = false;
+      _confirmPasswordCompleted = false;
+      
+      // Clear text fields to prevent validation issues
+      if (!_isLoginMode) {
+        // Switching to signup mode, clear login fields
+        _loginEmailController.clear();
+        _loginPasswordController.clear();
+      } else {
+        // Switching to login mode, clear signup fields
+        _firstNameController.clear();
+        _lastNameController.clear();
+        _middleNameController.clear();
+        _contactController.clear();
+        _phoneController.clear();
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      }
+    });
+    
+    // Add a small delay before focusing on the first field of the new mode
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        if (_isLoginMode) {
+          _loginEmailFocus.requestFocus();
+        } else {
+          _firstNameFocus.requestFocus();
+        }
+      }
     });
   }
   
@@ -201,71 +354,108 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   }
   
   // Check if a field is completed and update state
+  // Using a debounced approach to reduce frequent state updates
   void _checkFieldCompletion(String field, String value) {
-    bool isCompleted = false;
-    
-    switch (field) {
-      case 'name':
-        isCompleted = value.trim().isNotEmpty;
-        if (isCompleted != _nameCompleted) {
-          setState(() {
-            _nameCompleted = isCompleted;
-          });
-          if (isCompleted) {
-            _playFieldCompletionSound();
-            _animateFieldCompletion();
+    // Debounce the field completion check to reduce frequent updates
+    Future.microtask(() {
+      if (!mounted) return;
+      
+      bool isCompleted = false;
+      bool stateChanged = false;
+      
+      switch (field) {
+        case 'firstName':
+          isCompleted = value.trim().isNotEmpty;
+          if (isCompleted != _firstNameCompleted) {
+            _firstNameCompleted = isCompleted;
+            stateChanged = true;
           }
-        }
-        break;
-      case 'contact':
-        // Validation for email
-        final emailValidator = EmailValidatorService();
-        isCompleted = value.trim().isNotEmpty && emailValidator.isValidFormat(value);
-        if (isCompleted != _contactCompleted) {
-          setState(() {
+          break;
+        case 'lastName':
+          isCompleted = value.trim().isNotEmpty;
+          if (isCompleted != _lastNameCompleted) {
+            _lastNameCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'middleName':
+          // Middle name is optional, so always mark as completed if it has any value
+          isCompleted = true;
+          if (isCompleted != _middleNameCompleted) {
+            _middleNameCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'contact':
+          // Validation for email - use simple format check for performance
+          final emailValidator = EmailValidatorService();
+          isCompleted = value.trim().isNotEmpty && value.contains('@') && value.contains('.');
+          if (isCompleted != _contactCompleted) {
             _contactCompleted = isCompleted;
-          });
-          if (isCompleted) {
-            _playFieldCompletionSound();
-            _animateFieldCompletion();
+            stateChanged = true;
           }
-        }
-        break;
-      case 'password':
-        // Use password validator service for validation
-        final passwordValidator = PasswordValidatorService();
-        final (isPolicyValid, _) = passwordValidator.validatePolicy(value);
-        isCompleted = isPolicyValid;
-        if (isCompleted != _passwordCompleted) {
-          setState(() {
+          break;
+        case 'phone':
+          // Phone validation
+          isCompleted = value.trim().isNotEmpty;
+          if (isCompleted != _phoneCompleted) {
+            _phoneCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'password':
+          // Use simplified check for performance during typing
+          isCompleted = value.length >= 8 && 
+                        RegExp(r'[A-Z]').hasMatch(value) && 
+                        RegExp(r'[a-z]').hasMatch(value) && 
+                        RegExp(r'[0-9]').hasMatch(value);
+          if (isCompleted != _passwordCompleted) {
             _passwordCompleted = isCompleted;
-          });
-          if (isCompleted) {
-            _playFieldCompletionSound();
-            _animateFieldCompletion();
+            stateChanged = true;
           }
-        }
-        break;
-      case 'confirm_password':
-        // Check if passwords match
-        isCompleted = value.trim().isNotEmpty && value == _passwordController.text;
-        if (isCompleted != _confirmPasswordCompleted) {
-          setState(() {
+          break;
+        case 'confirm_password':
+          // Check if passwords match
+          isCompleted = value.trim().isNotEmpty && value == _passwordController.text;
+          if (isCompleted != _confirmPasswordCompleted) {
             _confirmPasswordCompleted = isCompleted;
-          });
-          if (isCompleted) {
-            _playFieldCompletionSound();
-            _animateFieldCompletion();
+            stateChanged = true;
           }
+          break;
+      }
+      
+      // Only update state once if any changes were made
+      if (stateChanged && mounted) {
+        setState(() {
+          // State variables were already updated above
+        });
+        
+        // Play sound and animate only if the field was completed
+        if (isCompleted) {
+          _playFieldCompletionSound();
+          _animateFieldCompletion();
         }
-        break;
-    }
+      }
+    });
   }
   
-  // Animate field completion
+  // Animate field completion with smoother animation
   void _animateFieldCompletion() {
-    _animationController.reset();
-    _animationController.forward();
+    // Only animate if the controller is initialized and the widget is mounted
+    if (_animationController.isAnimating || !mounted) return;
+    
+    // Use a try-catch block to handle potential animation errors
+    try {
+      _animationController.reset();
+      // Use a smoother curve for the animation
+      _animationController.forward().orCancel.catchError((error) {
+        // Silently catch animation cancellation errors
+        debugPrint('Animation error: $error');
+      });
+    } catch (e) {
+      // Catch any other errors that might occur during animation
+      debugPrint('Animation error: $e');
+    }
   }
   
   // Toggle voice guidance
@@ -286,8 +476,19 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     
     // Validate form
     if (!_loginFormKey.currentState!.validate()) {
+      // Find the first field with an error and focus it
+      if (_loginEmailController.text.isEmpty) {
+        _loginEmailFocus.requestFocus();
+        return;
+      } else if (_loginPasswordController.text.isEmpty) {
+        _loginPasswordFocus.requestFocus();
+        return;
+      }
       return;
     }
+
+    // Prevent multiple submissions
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -319,10 +520,19 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         SnackBar(
           content: Text('Login error: ${e.toString()}'),
           backgroundColor: Theme.of(context).colorScheme.error,
+          duration: const Duration(seconds: 3),
         ),
       );
+      
+      // Reset loading state
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Focus on email field for retry
+      _loginEmailFocus.requestFocus();
     } finally {
-      if (mounted) {
+      if (mounted && _isLoading) {
         setState(() {
           _isLoading = false;
         });
@@ -337,6 +547,26 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     
     // First check if the form is valid using standard validation
     if (!_signupFormKey.currentState!.validate()) {
+      // Find the first field with an error and focus it
+      if (_firstNameController.text.isEmpty) {
+        _firstNameFocus.requestFocus();
+        return;
+      } else if (_lastNameController.text.isEmpty) {
+        _lastNameFocus.requestFocus();
+        return;
+      } else if (_contactController.text.isEmpty) {
+        _contactFocus.requestFocus();
+        return;
+      } else if (_phoneController.text.isEmpty) {
+        _phoneFocus.requestFocus();
+        return;
+      } else if (_passwordController.text.isEmpty) {
+        _passwordFocus.requestFocus();
+        return;
+      } else if (_confirmPasswordController.text.isEmpty) {
+        _confirmPasswordFocus.requestFocus();
+        return;
+      }
       return;
     }
     
@@ -380,6 +610,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       return;
     }
 
+    // Prevent multiple submissions
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -413,13 +646,28 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
           duration: const Duration(seconds: 3),
         ),
       );
+      
+      // Reset loading state
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Focus on the first field for retry
+      _firstNameFocus.requestFocus();
     } finally {
-      if (mounted) {
+      if (mounted && _isLoading) {
         setState(() {
           _isLoading = false;
         });
       }
     }
+  }
+  
+  // Build password strength indicator widget
+  Widget _buildPasswordStrengthIndicator() {
+    return PasswordStrengthIndicator(
+      password: _passwordController.text,
+    );
   }
 
   @override
@@ -429,258 +677,304 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     final statusBarHeight = mediaQuery.padding.top;
     
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.royalPurple,
-              AppTheme.lightPurple,
-            ],
+      resizeToAvoidBottomInset: true,
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppTheme.royalPurple,
+                AppTheme.lightPurple,
+              ],
+            ),
           ),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(24.0, statusBarHeight + 24.0, 24.0, 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // App logo with drop shadow
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.gold.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      'S',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondary,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                      ),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            clipBehavior: Clip.none,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24.0, statusBarHeight + 24.0, 24.0, 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // App logo with drop shadow
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.gold.withOpacity(0.5),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Header with glassmorphism effect
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        _isLoginMode ? 'Welcome Back' : 'Account Setup',
+                    child: Center(
+                      child: Text(
+                        'S',
                         style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize: 28,
+                          color: theme.colorScheme.onSecondary,
+                          fontSize: 48,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isLoginMode 
-                            ? 'Sign in to continue to Savessa' 
-                            : 'Let\'s set up your Savessa account',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                          fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Header with glassmorphism effect
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 1,
                         ),
-                        textAlign: TextAlign.center,
+                      ],
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
                       ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Login/Signup toggle
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Login tab
-                      GestureDetector(
-                        onTap: () {
-                          if (!_isLoginMode) {
-                            _toggleMode();
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _isLoginMode 
-                                ? theme.colorScheme.secondary 
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          _isLoginMode ? 'Welcome Back' : 'Account Setup',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
                           ),
-                          child: Text(
-                            'Login',
-                            style: TextStyle(
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _isLoginMode 
+                              ? 'Sign in to continue to Savessa' 
+                              : 'Let\'s set up your Savessa account',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                  const SizedBox(height: 24),
+                  
+                  // Login/Signup toggle
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Login tab
+                        GestureDetector(
+                          onTap: () {
+                            if (!_isLoginMode) {
+                              _toggleMode();
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
                               color: _isLoginMode 
-                                  ? theme.colorScheme.onSecondary 
-                                  : theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
+                                  ? theme.colorScheme.secondary 
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              'Login',
+                              style: TextStyle(
+                                color: _isLoginMode 
+                                    ? theme.colorScheme.onSecondary 
+                                    : theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      
-                      // Signup tab
-                      GestureDetector(
-                        onTap: () {
-                          if (_isLoginMode) {
-                            _toggleMode();
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: !_isLoginMode 
-                                ? theme.colorScheme.secondary 
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(
+                        
+                        // Signup tab
+                        GestureDetector(
+                          onTap: () {
+                            if (_isLoginMode) {
+                              _toggleMode();
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
                               color: !_isLoginMode 
-                                  ? theme.colorScheme.onSecondary 
-                                  : theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
+                                  ? theme.colorScheme.secondary 
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                color: !_isLoginMode 
+                                    ? theme.colorScheme.onSecondary 
+                                    : theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 
-                const SizedBox(height: 16),
-                
-                // Voice guidance toggle with improved styling
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        spreadRadius: 0,
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  
+                  // Voice guidance toggle with improved styling
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          IconMapping.settings,
+                          color: theme.colorScheme.onPrimary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Voice Guidance',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: _voiceGuidanceEnabled,
+                          onChanged: (value) {
+                            _toggleVoiceGuidance();
+                          },
+                          activeColor: theme.colorScheme.secondary,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        IconMapping.settings,
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Role indication
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          IconMapping.person,
+                          color: theme.colorScheme.secondary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _selectedRole == 'admin'
+                                ? 'Setting up as: Savings Manager'
+                                : 'Setting up as: Savings Contributor',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Form with glassmorphism container
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: _isLoginMode ? _buildLoginForm() : _buildSignupForm(),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Back button
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        context.go('/role');
+                      },
+                      icon: Icon(
+                        FeatherIcons.arrowLeft,
                         color: theme.colorScheme.onPrimary,
-                        size: 20,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Voice Guidance',
+                      label: Text(
+                        'Back to Role Selection',
                         style: TextStyle(
                           color: theme.colorScheme.onPrimary,
-                          fontSize: 14,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: _voiceGuidanceEnabled,
-                        onChanged: (value) {
-                          _toggleVoiceGuidance();
-                        },
-                        activeColor: theme.colorScheme.secondary,
-                      ),
-                    ],
-                  ),
-                ),
-                  
-                const SizedBox(height: 32),
-                  
-                // Form with glassmorphism container
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
                     ),
                   ),
-                  child: _isLoginMode ? _buildLoginForm() : _buildSignupForm(),
-                ),
-                  
-                const SizedBox(height: 24),
-                  
-                // Back button
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      context.go('/role');
-                    },
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                    label: Text(
-                      'Back to Role Selection',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -780,27 +1074,67 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       key: _signupFormKey,
       child: Column(
         children: [
-          // Name field
+          // First name field
           AppTextField(
-            controller: _nameController,
-            focusNode: _nameFocus,
-            label: 'Full Name',
-            hint: 'Enter your full name',
+            controller: _firstNameController,
+            focusNode: _firstNameFocus,
+            label: 'First Name',
+            textInputAction: TextInputAction.next,
             prefixIcon: const Icon(IconMapping.person),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter your name';
+              if (value == null || value.isEmpty) {
+                return 'This field is required';
               }
               return null;
             },
             onChanged: (value) {
-              _checkFieldCompletion('name', value);
+              _checkFieldCompletion('firstName', value);
             },
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).requestFocus(_lastNameFocus);
+            },
+            suffixIcon: _firstNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+          ),
+          const SizedBox(height: 16),
+          
+          // Last name field
+          AppTextField(
+            controller: _lastNameController,
+            focusNode: _lastNameFocus,
+            label: 'Last Name',
             textInputAction: TextInputAction.next,
+            prefixIcon: const Icon(IconMapping.personOutline),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'This field is required';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              _checkFieldCompletion('lastName', value);
+            },
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).requestFocus(_middleNameFocus);
+            },
+            suffixIcon: _lastNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+          ),
+          const SizedBox(height: 16),
+          
+          // Middle name field (optional)
+          AppTextField(
+            controller: _middleNameController,
+            focusNode: _middleNameFocus,
+            label: 'Middle Name (Optional)',
+            textInputAction: TextInputAction.next,
+            prefixIcon: const Icon(IconMapping.peopleOutline),
+            onChanged: (value) {
+              _checkFieldCompletion('middleName', value);
+            },
             onFieldSubmitted: (_) {
               FocusScope.of(context).requestFocus(_contactFocus);
             },
-            suffixIcon: _nameCompleted ? const Icon(IconMapping.checkCircle) : null,
+            suffixIcon: _middleNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+            // Middle name is optional, so no validator
           ),
           const SizedBox(height: 16),
           
@@ -857,6 +1191,110 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                 }
               });
             },
+          ),
+          const SizedBox(height: 16),
+          
+          // Phone field with country selector
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                child: Text(
+                  'Phone Number',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              IntlPhoneField(
+                controller: _phoneController,
+                focusNode: _phoneFocus,
+                decoration: InputDecoration(
+                  hintText: 'Enter phone number',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.gold, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
+                ),
+                initialCountryCode: _selectedCountry.code,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                dropdownTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                dropdownIcon: const Icon(
+                  IconMapping.arrowDownward,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
+                showDropdownIcon: true,
+                disableLengthCheck: false,
+                invalidNumberMessage: 'Invalid phone number',
+                onChanged: (phone) {
+                  setState(() {
+                    _countryCode = phone.countryCode;
+                    _completePhoneNumber = phone.completeNumber;
+                    // We don't update _selectedCountry here as it's handled in onCountryChanged
+                    _phoneValidationStatus = ValidationStatus.valid;
+                    _checkFieldCompletion('phone', phone.number);
+                  });
+                },
+                onCountryChanged: (country) {
+                  setState(() {
+                    _countryCode = '+${country.dialCode}';
+                    _selectedCountry = country;
+                    // Update complete phone number
+                    if (_phoneController.text.isNotEmpty) {
+                      _completePhoneNumber = '$_countryCode${_phoneController.text}';
+                    }
+                  });
+                },
+                validator: (phone) {
+                  // Use the static method from PhoneValidatorService
+                  final errorMessage = PhoneValidatorService.validateIntlPhone(phone, _selectedCountry);
+                  
+                  // Update validation status based on result
+                  setState(() {
+                    _phoneValidationStatus = errorMessage == null 
+                        ? ValidationStatus.valid 
+                        : ValidationStatus.invalid;
+                  });
+                  
+                  return errorMessage;
+                },
+                onSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_passwordFocus);
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           
@@ -930,9 +1368,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
           
           // Password strength indicator
           if (_passwordController.text.isNotEmpty)
-            PasswordStrengthIndicator(
-              password: _passwordController.text,
-            ),
+            _buildPasswordStrengthIndicator(),
           const SizedBox(height: 16),
           
           // Confirm password field

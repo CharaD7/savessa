@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/icon_mapping.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -114,7 +116,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.volume_up,
+                      IconMapping.speaker2, // Using speaker-2 icon for Voice Guidance
                       color: theme.colorScheme.onPrimary,
                     ),
                     const SizedBox(width: 8),
@@ -190,26 +192,26 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Flag placeholder (replace with actual flag icons)
+                                // Flag image using SVG
                                 Container(
                                   width: 60,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: isHovered 
-                                      ? theme.colorScheme.onSecondary 
-                                      : theme.colorScheme.primary,
                                     borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      language['code']!.toUpperCase(),
-                                      style: TextStyle(
-                                        color: isHovered 
-                                          ? theme.colorScheme.secondary 
-                                          : theme.colorScheme.onPrimary,
-                                        fontWeight: FontWeight.bold,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 2,
+                                        spreadRadius: 0,
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: SvgPicture.asset(
+                                    'assets/icons/flags/${language['code']}.svg',
+                                    fit: BoxFit.cover,
+                                    width: 60,
+                                    height: 40,
                                   ),
                                 ),
                                 const SizedBox(height: 12),

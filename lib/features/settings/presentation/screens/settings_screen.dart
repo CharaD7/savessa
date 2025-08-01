@@ -27,8 +27,8 @@ class SettingsScreen extends StatelessWidget {
               // Close the dialog
               Navigator.of(context).pop();
               
-              // Navigate to login screen
-              context.go('/login');
+              // Navigate to login screen with default role
+              context.go('/login', extra: 'member');
             },
             child: const Text('Logout'),
           ),

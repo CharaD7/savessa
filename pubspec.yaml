@@ -37,7 +37,11 @@ dependencies:
   http: ^1.1.0
   crypto: ^3.0.3
   flutter_dotenv: ^5.1.0
+  page_transition: ^2.2.1
 
+  async: any
+  intl_phone_field: ^3.2.0
+  geolocator: ^14.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -50,5 +54,6 @@ flutter:
     - assets/images/
     - assets/animations/
     - assets/icons/
+    - assets/icons/flags/
     - assets/sounds/
     - .env

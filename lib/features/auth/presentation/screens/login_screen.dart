@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:feather_icons/feather_icons.dart';
 
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../core/constants/icon_mapping.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../services/validation/email_validator_service.dart';
+import '../../../../services/validation/password_validator_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? selectedRole;
+  
+  const LoginScreen({
+    super.key,
+    this.selectedRole,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _isLoading = false;
   bool _voiceGuidanceEnabled = false;
   String _currentField = '';
+  String _selectedRole = 'member'; // Default role
   
   // Animation controller for field completion animations
   late AnimationController _animationController;
@@ -44,6 +53,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    
+    // Set selected role from widget parameter if provided
+    if (widget.selectedRole != null) {
+      _selectedRole = widget.selectedRole!;
+    }
     
     // Add listeners to focus nodes
     _emailFocus.addListener(() {
@@ -215,7 +229,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to continue to Savessa',
+                        _selectedRole == 'admin'
+                            ? 'Logging in as Savings Manager'
+                            : 'Logging in as Savings Contributor',
                         style: TextStyle(
                           color: theme.colorScheme.onPrimary.withOpacity(0.9),
                           fontSize: 16,
@@ -312,6 +328,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   ),
                 ),
                   
+                const SizedBox(height: 16),
+                
+                // Role indication
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        IconMapping.person,
+                        color: theme.colorScheme.secondary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _selectedRole == 'admin'
+                              ? 'Logging in as Savings Manager'
+                              : 'Logging in as Savings Contributor',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
                 const SizedBox(height: 32),
                   
                 // Form with glassmorphism container
@@ -349,7 +402,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             if (value == null || value.isEmpty) {
                               return 'errors.required_field'.tr();
                             }
-                            if (!value.contains('@')) {
+                            
+                            // Use EmailValidatorService for better validation
+                            final emailValidator = EmailValidatorService();
+                            if (!emailValidator.isValidFormat(value)) {
+                              // Check if we can suggest a correction
+                              final suggestion = emailValidator.suggestCorrection(value);
+                              if (suggestion != null) {
+                                return 'Invalid email format. Did you mean $suggestion?';
+                              }
                               return 'errors.invalid_email'.tr();
                             }
                             return null;
@@ -373,9 +434,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             if (value == null || value.isEmpty) {
                               return 'errors.required_field'.tr();
                             }
-                            if (value.length < 6) {
-                              return 'errors.password_too_short'.tr();
+                            
+                            final passwordValidator = PasswordValidatorService();
+                            final (isPolicyValid, policyError) = passwordValidator.validatePolicy(value);
+                            if (!isPolicyValid) {
+                              return policyError;
                             }
+                            
                             return null;
                           },
                           onFieldSubmitted: (_) {
@@ -425,7 +490,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       context.go('/role');
                     },
                     icon: Icon(
-                      Icons.arrow_back,
+                      FeatherIcons.arrowLeft,
                       color: theme.colorScheme.onPrimary,
                     ),
                     label: Text(

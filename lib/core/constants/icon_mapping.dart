@@ -39,4 +39,12 @@ class IconMapping {
   // Validation status
   static const IconData checkCircle = FeatherIcons.checkCircle;
   static const IconData xCircle = FeatherIcons.xCircle;
+  static const IconData error = FeatherIcons.alertCircle;
+  
+  // Audio and voice
+  static const IconData volumeUp = FeatherIcons.volume2; // Speaker with high volume
+  static const IconData volumeDown = FeatherIcons.volume1; // Speaker with low volume
+  static const IconData volumeOff = FeatherIcons.volumeX; // Speaker with mute
+  static const IconData speaker = FeatherIcons.volume2; // Alias for volumeUp
+  static const IconData speaker2 = FeatherIcons.volume2; // Speaker-2 icon for Voice Guidance
 }

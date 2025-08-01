@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:feather_icons/feather_icons.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
 
@@ -153,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     child: IconButton(
                       icon: Icon(
-                        _isVoiceEnabled ? IconMapping.visibility : IconMapping.visibilityOff,
+                        _isVoiceEnabled ? FeatherIcons.volume2 : FeatherIcons.volumeX,
                         color: theme.colorScheme.onPrimary,
                       ),
                       onPressed: _toggleVoice,
@@ -380,7 +381,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   shape: const CircleBorder(),
                                   padding: const EdgeInsets.all(16),
                                 ),
-                                child: const Icon(IconMapping.arrowUpward),
+                                child: const Icon(FeatherIcons.arrowLeft),
                               ),
                             )
                           : const SizedBox(width: 56), // Placeholder for spacing

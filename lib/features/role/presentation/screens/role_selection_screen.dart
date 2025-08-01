@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:feather_icons/feather_icons.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
 
@@ -68,10 +69,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
     _animationController.reset();
     _animationController.forward();
     
-    // Navigate to register screen with selected role after a short delay
-    Future.delayed(const Duration(milliseconds: 800), () {
-      context.go('/register', extra: roleId);
-    });
+    // Navigate directly to the account setup screen
+    context.go('/account-setup', extra: roleId);
   }
 
   @override
@@ -238,47 +237,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                   ),
                 ),
                 
-                // Already have an account button
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Already have an account?',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.go('/login');
-                        },
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
                 
                 // Back button
                 Center(
@@ -287,7 +245,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                       context.go('/onboarding');
                     },
                     icon: Icon(
-                      IconMapping.arrowUpward,
+                      FeatherIcons.arrowLeft,
                       color: theme.colorScheme.onPrimary,
                     ),
                     label: Text(

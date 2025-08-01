@@ -67,7 +67,14 @@ class AppRouter {
       // Account setup screen
       GoRoute(
         path: '/account-setup',
-        builder: (context, state) => const AccountSetupScreen(),
+        builder: (context, state) {
+          // Extract the selected role from state.extra
+          final selectedRole = state.extra as String?;
+          return AccountSetupScreen(
+            key: UniqueKey(),
+            selectedRole: selectedRole,
+          );
+        },
       ),
       
       // Authentication routes
@@ -187,13 +194,8 @@ class AppRouter {
     
     // Redirect logic
     redirect: (context, state) {
-      // Redirect from account-setup to login since we're no longer using the account setup screen
-      if (state.matchedLocation == '/account-setup') {
-        return '/login';
-      }
-      
       // This will be expanded when authentication is set up
-      // For now, we'll just return null for other routes to allow all navigation
+      // For now, we'll just return null for all routes to allow all navigation
       return null;
     },
   );

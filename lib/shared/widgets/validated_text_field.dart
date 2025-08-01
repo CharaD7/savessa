@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'dart:async';
+import 'package:async/async.dart';
 import '../../core/constants/icon_mapping.dart';
 import '../../core/theme/app_theme.dart';
+import 'loaders/gradient_square_loader.dart';
 
 enum ValidationStatus {
   none,
@@ -103,8 +106,12 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
   bool _isValidating = false;
   
   // Debounce timer for async validation
-  DateTime? _lastChangeTime;
+  Timer? _debounceTimer;
   static const _debounceTime = Duration(milliseconds: 500);
+  static const _validationTimeout = Duration(seconds: 5);
+  
+  // Cancellable future for validation
+  CancelableOperation<(bool, String?)>? _validationOperation;
 
   @override
   void initState() {
@@ -119,6 +126,10 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
 
   @override
   void dispose() {
+    // Cancel any pending operations
+    _debounceTimer?.cancel();
+    _validationOperation?.cancel();
+    
     if (widget.controller == null) {
       _controller.dispose();
     }
@@ -160,18 +171,33 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         _isValidating = true;
       });
       
-      _lastChangeTime = DateTime.now();
+      // Cancel any previous debounce timer
+      _debounceTimer?.cancel();
       
-      // Debounce to avoid too many API calls
-      Future.delayed(_debounceTime, () async {
-        // Only proceed if this is still the most recent change
-        if (_lastChangeTime != null && 
-            DateTime.now().difference(_lastChangeTime!) >= _debounceTime) {
-          try {
-            final (isValid, errorMsg) = await widget.asyncValidator!(_controller.text);
-            
+      // Cancel any previous validation operation
+      _validationOperation?.cancel();
+      
+      // Create a new debounce timer
+      _debounceTimer = Timer(_debounceTime, () {
+        // Capture the current text to validate
+        final textToValidate = _controller.text;
+        
+        // Create a cancellable operation for the validation
+        _validationOperation = CancelableOperation.fromFuture(
+          // Add timeout to prevent indefinite validation
+          widget.asyncValidator!(textToValidate)
+            .timeout(
+              _validationTimeout,
+              onTimeout: () => (false, 'Validation timed out. Please try again.'),
+            ),
+        );
+        
+        // Handle the validation result
+        _validationOperation?.value.then(
+          (result) {
             // Check if the widget is still mounted before updating state
             if (mounted) {
+              final (isValid, errorMsg) = result;
               setState(() {
                 _validationStatus = isValid ? ValidationStatus.valid : ValidationStatus.invalid;
                 _errorMessage = errorMsg;
@@ -182,16 +208,26 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
                 widget.onValidationComplete!(_validationStatus);
               }
             }
-          } catch (e) {
+          },
+          onError: (e, stackTrace) {
+            // Handle errors gracefully
             if (mounted) {
               setState(() {
                 _validationStatus = ValidationStatus.invalid;
                 _errorMessage = 'Validation error: ${e.toString()}';
                 _isValidating = false;
               });
+              
+              // Log the error for debugging
+              debugPrint('Validation error: $e');
+              debugPrint('Stack trace: $stackTrace');
+              
+              if (widget.onValidationComplete != null) {
+                widget.onValidationComplete!(_validationStatus);
+              }
             }
-          }
-        }
+          },
+        );
       });
     } else if (_controller.text.isNotEmpty) {
       // If no async validator but text is not empty and passed sync validation
@@ -257,121 +293,156 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
       },
       inputFormatters: widget.inputFormatters,
       autovalidateMode: widget.autovalidateMode,
-      style: theme.textTheme.bodyLarge,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: Colors.white, // Changed to white for better visibility on dark background
+        fontWeight: FontWeight.w500, // Slightly bolder for better visibility
+      ),
       decoration: InputDecoration(
         labelText: widget.label + (widget.required ? ' *' : ''),
+        labelStyle: TextStyle(
+          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+          fontWeight: _focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+        ),
         hintText: widget.hint,
+        hintStyle: TextStyle(
+          color: Colors.white.withOpacity(0.7), // Light hint text for better visibility on dark background
+        ),
         helperText: widget.helperText,
         errorText: _errorMessage,
-        prefixIcon: widget.prefixIcon,
+        errorStyle: const TextStyle(
+          color: Colors.red, // Standard red for errors
+          fontWeight: FontWeight.bold, // Make error messages more noticeable
+        ),
+        prefixIcon: widget.prefixIcon != null 
+            ? IconTheme(
+                data: IconThemeData(
+                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+                ),
+                child: widget.prefixIcon!,
+              )
+            : null,
         suffixIcon: _buildSuffixIcon(),
         prefix: widget.prefix,
         suffix: widget.suffix,
         contentPadding: widget.contentPadding,
         counterText: widget.showCounter ? null : '',
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1), // More transparent background for dark theme
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.gold, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
       ),
     );
   }
 
   Widget? _buildSuffixIcon() {
-    if (widget.suffixIcon != null) {
-      return widget.suffixIcon;
-    }
-
     final List<Widget> suffixIcons = [];
-
-    // Add validation status icon if enabled
-    if (widget.showValidationStatus) {
-      switch (_validationStatus) {
-        case ValidationStatus.valid:
-          suffixIcons.add(
-            Container(
-              margin: const EdgeInsets.all(12),
-              child: const Icon(
+    
+    // Add validation status indicator if enabled
+    if (widget.showValidationStatus && _controller.text.isNotEmpty) {
+      if (_isValidating) {
+        // Show loading indicator while validating
+        suffixIcons.add(
+          const GradientSquareLoader(
+            size: 20,
+            color1: AppTheme.gold,
+            animationDurationMs: 1200,
+          ),
+        );
+      } else {
+        // Show validation status icon
+        switch (_validationStatus) {
+          case ValidationStatus.valid:
+            suffixIcons.add(
+              const Icon(
                 IconMapping.checkCircle,
-                color: AppTheme.success,
+                color: Colors.green,
                 size: 20,
               ),
-            ),
-          );
-          break;
-        case ValidationStatus.invalid:
-          suffixIcons.add(
-            Container(
-              margin: const EdgeInsets.all(12),
-              child: const Icon(
-                IconMapping.xCircle,
-                color: AppTheme.error,
+            );
+            break;
+          case ValidationStatus.invalid:
+            suffixIcons.add(
+              const Icon(
+                IconMapping.error,
+                color: Colors.red,
                 size: 20,
               ),
-            ),
-          );
-          break;
-        case ValidationStatus.validating:
-          suffixIcons.add(
-            Container(
-              margin: const EdgeInsets.all(12),
-              width: 20,
-              height: 20,
-              child: const CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.lightPurple),
-              ),
-            ),
-          );
-          break;
-        case ValidationStatus.none:
-          // No icon for none status
-          break;
+            );
+            break;
+          default:
+            // No icon for none status
+            break;
+        }
       }
     }
-
-    // Add clear button if text is not empty and field is enabled
-    if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
-      suffixIcons.add(
-        IconButton(
-          icon: const Icon(IconMapping.clear, size: 20),
-          onPressed: () {
-            _controller.clear();
-            setState(() {
-              _validationStatus = ValidationStatus.none;
-              _errorMessage = null;
-            });
-            if (widget.onChanged != null) {
-              widget.onChanged!('');
-            }
-          },
-          splashRadius: 20,
-        ),
-      );
-    }
-
-    // Add password toggle if obscureText is true
-    if (widget.showPasswordToggle && widget.obscureText) {
-      suffixIcons.add(
-        IconButton(
-          icon: Icon(
-            _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-            size: 20,
+    
+    // Add custom suffix icon if provided
+    if (widget.suffixIcon != null) {
+      suffixIcons.add(widget.suffixIcon!);
+    } else {
+      // Add clear button if text is not empty and field is enabled
+      if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
+        suffixIcons.add(
+          IconButton(
+            icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withOpacity(0.9)),
+            onPressed: () {
+              _controller.clear();
+              if (widget.onChanged != null) {
+                widget.onChanged!('');
+              }
+            },
+            splashRadius: 20,
           ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-          splashRadius: 20,
-        ),
-      );
+        );
+      }
+      
+      // Add password toggle if field is password
+      if (widget.obscureText && widget.showPasswordToggle) {
+        suffixIcons.add(
+          IconButton(
+            icon: Icon(
+              _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+              size: 20,
+              color: Colors.white.withOpacity(0.9),
+            ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+            splashRadius: 20,
+          ),
+        );
+      }
     }
-
+    
     if (suffixIcons.isEmpty) {
       return null;
     }
-
+    
     if (suffixIcons.length == 1) {
       return suffixIcons.first;
     }
-
+    
+    // If we have multiple suffix icons, wrap them in a row
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: suffixIcons,

@@ -44,6 +44,26 @@ class PasswordValidatorService {
     RegExp(r'987654321'),
   ];
   
+  // Check if password has uppercase letters
+  bool hasUppercase(String password) {
+    return _uppercaseRegex.hasMatch(password);
+  }
+  
+  // Check if password has lowercase letters
+  bool hasLowercase(String password) {
+    return _lowercaseRegex.hasMatch(password);
+  }
+  
+  // Check if password has digits
+  bool hasDigit(String password) {
+    return _digitRegex.hasMatch(password);
+  }
+  
+  // Check if password has special characters
+  bool hasSpecialChar(String password) {
+    return _specialCharRegex.hasMatch(password);
+  }
+  
   // Check password strength
   PasswordStrength checkStrength(String password) {
     if (password.length < _minLength) {
@@ -58,10 +78,10 @@ class PasswordValidatorService {
     if (password.length >= 12) score++;
     
     // Character type score
-    if (_uppercaseRegex.hasMatch(password)) score++;
-    if (_lowercaseRegex.hasMatch(password)) score++;
-    if (_digitRegex.hasMatch(password)) score++;
-    if (_specialCharRegex.hasMatch(password)) score++;
+    if (hasUppercase(password)) score++;
+    if (hasLowercase(password)) score++;
+    if (hasDigit(password)) score++;
+    if (hasSpecialChar(password)) score++;
     
     // Variety score
     final uniqueChars = password.split('').toSet().length;
@@ -209,62 +229,5 @@ class PasswordValidatorService {
       case PasswordStrength.veryStrong:
         return 'Very Strong';
     }
-  }
-}
-
-// Password strength indicator widget
-class PasswordStrengthIndicator extends StatelessWidget {
-  final String password;
-  
-  const PasswordStrengthIndicator({
-    super.key,
-    required this.password,
-  });
-  
-  @override
-  Widget build(BuildContext context) {
-    final service = PasswordValidatorService();
-    final strength = service.checkStrength(password);
-    final color = service.getStrengthColor(strength);
-    final label = service.getStrengthLabel(strength);
-    
-    // Calculate strength percentage for the progress indicator
-    double strengthPercent = 0.0;
-    switch (strength) {
-      case PasswordStrength.weak:
-        strengthPercent = 0.25;
-        break;
-      case PasswordStrength.medium:
-        strengthPercent = 0.5;
-        break;
-      case PasswordStrength.strong:
-        strengthPercent = 0.75;
-        break;
-      case PasswordStrength.veryStrong:
-        strengthPercent = 1.0;
-        break;
-    }
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: strengthPercent,
-          backgroundColor: Colors.grey.shade300,
-          valueColor: AlwaysStoppedAnimation<Color>(color),
-          minHeight: 5,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Password strength: $label',
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
   }
 }

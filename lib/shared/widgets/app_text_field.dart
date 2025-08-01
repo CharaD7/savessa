@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/icon_mapping.dart';
+import '../../core/theme/app_theme.dart';
 
 class AppTextField extends StatefulWidget {
   final String label;
@@ -109,6 +110,13 @@ class _AppTextFieldState extends State<AppTextField> {
     setState(() {});
   }
 
+  String? _requiredValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'errors.required_field'.tr();
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -131,18 +139,61 @@ class _AppTextFieldState extends State<AppTextField> {
       validator: widget.validator ?? (widget.required ? _requiredValidator : null),
       inputFormatters: widget.inputFormatters,
       autovalidateMode: widget.autovalidateMode,
-      style: theme.textTheme.bodyLarge,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: Colors.white, // Changed to white for better visibility on dark background
+        fontWeight: FontWeight.w500, // Slightly bolder for better visibility
+      ),
       decoration: InputDecoration(
         labelText: widget.label + (widget.required ? ' *' : ''),
+        labelStyle: TextStyle(
+          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+          fontWeight: _focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+        ),
         hintText: widget.hint,
+        hintStyle: TextStyle(
+          color: Colors.white.withOpacity(0.7), // Light hint text for better visibility on dark background
+        ),
         helperText: widget.helperText,
         errorText: widget.errorText,
-        prefixIcon: widget.prefixIcon,
+        errorStyle: const TextStyle(
+          color: Colors.red, // Standard red for errors
+          fontWeight: FontWeight.bold, // Make error messages more noticeable
+        ),
+        prefixIcon: widget.prefixIcon != null 
+            ? IconTheme(
+                data: IconThemeData(
+                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+                ),
+                child: widget.prefixIcon!,
+              )
+            : null,
         suffixIcon: _buildSuffixIcon(),
         prefix: widget.prefix,
         suffix: widget.suffix,
         contentPadding: widget.contentPadding,
         counterText: widget.showCounter ? null : '',
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1), // More transparent background for dark theme
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.gold, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
       ),
     );
   }
@@ -158,7 +209,7 @@ class _AppTextFieldState extends State<AppTextField> {
     if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
       suffixIcons.add(
         IconButton(
-          icon: const Icon(IconMapping.clear, size: 20),
+          icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withOpacity(0.9)),
           onPressed: () {
             _controller.clear();
             if (widget.onChanged != null) {
@@ -170,13 +221,14 @@ class _AppTextFieldState extends State<AppTextField> {
       );
     }
 
-    // Add password toggle if obscureText is true
-    if (widget.showPasswordToggle && widget.obscureText) {
+    // Add password toggle if field is password
+    if (widget.obscureText && widget.showPasswordToggle) {
       suffixIcons.add(
         IconButton(
           icon: Icon(
             _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
             size: 20,
+            color: Colors.white.withOpacity(0.9),
           ),
           onPressed: () {
             setState(() {
@@ -200,12 +252,5 @@ class _AppTextFieldState extends State<AppTextField> {
       mainAxisSize: MainAxisSize.min,
       children: suffixIcons,
     );
-  }
-
-  String? _requiredValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'errors.required_field'.tr();
-    }
-    return null;
   }
 }
