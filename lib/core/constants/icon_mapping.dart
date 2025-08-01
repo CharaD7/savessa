@@ -35,6 +35,7 @@ class IconMapping {
   static const IconData clear = FeatherIcons.x;
   static const IconData visibilityOff = FeatherIcons.eyeOff;
   static const IconData visibility = FeatherIcons.eye;
+  static const IconData search = FeatherIcons.search;
   
   // Validation status
   static const IconData checkCircle = FeatherIcons.checkCircle;
