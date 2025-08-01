@@ -44,6 +44,26 @@ class PhoneValidatorService {
     // Add more countries as needed
   };
 
+  /// Gets the expected length for a country code
+  /// Returns a list of valid lengths, or a default list if not found
+  static List<int> getExpectedLength(String countryCode) {
+    return _expectedLengths[countryCode] ?? [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  }
+  
+  /// Gets the minimum expected length for a country code
+  /// Returns the first (usually minimum) valid length
+  static int getMinExpectedLength(String countryCode) {
+    final lengths = getExpectedLength(countryCode);
+    return lengths.first;
+  }
+  
+  /// Gets the maximum expected length for a country code
+  /// Returns the last (usually maximum) valid length
+  static int getMaxExpectedLength(String countryCode) {
+    final lengths = getExpectedLength(countryCode);
+    return lengths.last;
+  }
+
   /// Validates a phone number from IntlPhoneField
   static String? validateIntlPhone(dynamic phone, Country country) {
     if (phone == null || phone.number.isEmpty) {
