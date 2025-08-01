@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:io' show Platform;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,14 +10,14 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../shared/widgets/phone_number_count_indicator.dart';
+import '../../../../shared/widgets/auth/signup_form.dart';
+import '../../../../shared/widgets/auth/role_type_indicator.dart';
 import '../../../../services/database/database_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
 import '../../../../core/constants/icon_mapping.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/text_styles.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? selectedRole;
@@ -50,9 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   String _countryCode = '+1'; // Default country code (US)
   String _completePhoneNumber = ''; // Complete phone number with country code
   Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
-  int _phoneDigitCount = 0; // Current number of digits in phone number
-  int _requiredPhoneDigits = 10; // Required number of digits for selected country (default to US)
-  bool _isPhoneMaxReached = false; // Whether the maximum digit count has been reached
   
   // Validation status tracking
   ValidationStatus _emailValidationStatus = ValidationStatus.none;
@@ -76,67 +71,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   String _currentField = '';
   late AnimationController _animationController;
   
-  // Method to get the device's locale and map it to a country code
-  String _getDeviceLocale() {
-    try {
-      // Get the device's locale
-      final String localeName = Platform.localeName;
-      debugPrint('Device locale: $localeName');
-      
-      // Parse the locale to extract the country code
-      // Locale format is typically 'language_COUNTRY' (e.g., 'en_US')
-      final List<String> localeParts = localeName.split('_');
-      if (localeParts.length > 1) {
-        final String countryCode = localeParts[1];
-        
-        // Check if this country code exists in our countries list
-        try {
-          final bool countryExists = countries.any(
-            (c) => c.code.toLowerCase() == countryCode.toLowerCase()
-          );
-          
-          if (countryExists) {
-            debugPrint('Found country from device locale: $countryCode');
-            return countryCode;
-          }
-        } catch (e) {
-          debugPrint('Error checking country from locale: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error getting device locale: $e');
-    }
-    
-    // Return a default country code if we couldn't get a valid one from the locale
-    return 'US';
-  }
-
   // Method to get the current location and set the country
   Future<void> _detectUserCountry() async {
-    // First try to get the country from device settings
-    final String deviceCountryCode = _getDeviceLocale();
-    
-    // Try to find the country in the countries list
-    try {
-      final Country country = countries.firstWhere(
-        (c) => c.code.toLowerCase() == deviceCountryCode.toLowerCase(),
-        orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
-      );
-      
-      // Update the selected country
-      setState(() {
-        _selectedCountry = country;
-        _countryCode = '+${country.dialCode}';
-      });
-      
-      debugPrint('Set country from device settings: ${country.name} (${country.code})');
-      return; // Exit early if we successfully set the country from device settings
-    } catch (e) {
-      debugPrint('Error finding country from device settings: $e');
-      // Continue to geolocation fallback
-    }
-    
-    // Fallback to geolocation if device settings didn't provide a valid country
     try {
       // Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
@@ -265,9 +201,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     
     // Detect user's country
     _detectUserCountry();
-    
-    // Initialize required phone digits based on default country
-    _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(_selectedCountry.code);
     
     // Add listeners to focus nodes
     _firstNameFocusNode.addListener(() {
@@ -415,10 +348,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _emailFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your email is valid before continuing.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your email is valid before continuing.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -430,10 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _confirmEmailFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your email confirmation matches.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your email confirmation matches.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -445,10 +372,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _passwordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your password meets all requirements.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your password meets all requirements.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -460,10 +384,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _confirmPasswordFocusNode.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please ensure your password confirmation matches.',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: const Text('Please ensure your password confirmation matches.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -484,10 +405,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Email verification is required to register.',
-              style: TextStyles.errorWithGlow(),
-            ),
+            content: const Text('Email verification is required to register.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -525,10 +443,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Email already registered. Please use a different email.',
-              style: TextStyles.errorWithGlow(),
-            ),
+            content: const Text('Email already registered. Please use a different email.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -543,10 +458,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'auth.register_success'.tr(),
-            style: TextStyles.successWithGlow(),
-          ),
+          content: Text('auth.register_success'.tr()),
           backgroundColor: Colors.green,
         ),
       );
@@ -559,10 +471,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Registration error: ${e.toString()}',
-            style: TextStyles.errorWithGlow(),
-          ),
+          content: Text('Registration error: ${e.toString()}'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -931,29 +840,16 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4, bottom: 8),
-                                  child: Text(
-                                    'auth.phone'.tr(),
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontWeight: FontWeight.normal,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4, bottom: 8),
+                              child: Text(
+                                'auth.phone'.tr(),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 14,
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 4, bottom: 8),
-                                  child: PhoneNumberCountIndicator(
-                                    currentCount: _phoneDigitCount,
-                                    requiredCount: _requiredPhoneDigits,
-                                    isMaxReached: _isPhoneMaxReached,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                             IntlPhoneField(
                               controller: _phoneController,
@@ -985,7 +881,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: Colors.red, width: 2),
                                 ),
-                                errorStyle: TextStyles.phoneErrorStyle(),
                               ),
                               initialCountryCode: _selectedCountry.code,
                               style: const TextStyle(
@@ -997,63 +892,19 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 fontWeight: FontWeight.w500,
                               ),
                               dropdownIcon: const Icon(
-                                IconMapping.search,
+                                IconMapping.arrowDownward,
                                 color: Colors.white,
                                 size: 18,
                               ),
                               flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
-                              showDropdownIcon: false,
+                              showDropdownIcon: true,
                               disableLengthCheck: false,
-                              invalidNumberMessage: 'Please enter a valid phone number',
+                              invalidNumberMessage: 'errors.invalid_phone'.tr(),
                               onChanged: (phone) {
-                                // Get the current text from the controller
-                                final currentText = phone.number;
-                                
-                                // Check if we need to restrict input (max reached and trying to add more)
-                                if (_isPhoneMaxReached && currentText.length > _phoneDigitCount) {
-                                  // User is trying to add more digits after max is reached
-                                  // Revert to previous text by removing the last character
-                                  final restrictedText = currentText.substring(0, _phoneDigitCount);
-                                  
-                                  // Update the controller with the restricted text
-                                  // We need to use Future.microtask to avoid setState during build
-                                  Future.microtask(() {
-                                    // Set the selection to the end of the text
-                                    final selection = TextSelection.collapsed(offset: restrictedText.length);
-                                    
-                                    // Update the controller
-                                    _phoneController.value = TextEditingValue(
-                                      text: restrictedText,
-                                      selection: selection,
-                                    );
-                                  });
-                                  
-                                  // Show a message to the user
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Maximum digit count reached ($_requiredPhoneDigits)',
-                                        style: TextStyles.withGlow(),
-                                      ),
-                                      duration: const Duration(seconds: 1),
-                                      backgroundColor: Colors.orange,
-                                    ),
-                                  );
-                                  
-                                  return; // Don't update state
-                                }
-                                
                                 setState(() {
                                   _countryCode = phone.countryCode;
                                   _completePhoneNumber = phone.completeNumber;
-                                  
-                                  // Update digit count
-                                  _phoneDigitCount = currentText.length;
-                                  
-                                  // Check if max reached
-                                  _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
-                                  
-                                  // Update validation status
+                                  // We don't update _selectedCountry here as it's handled in onCountryChanged
                                   _phoneValidationStatus = ValidationStatus.valid;
                                 });
                               },
@@ -1061,22 +912,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 setState(() {
                                   _countryCode = '+${country.dialCode}';
                                   _selectedCountry = country;
-                                  
-                                  // Get the required digit count for this country using the helper method
-                                  _requiredPhoneDigits = PhoneValidatorService.getMaxExpectedLength(country.code);
-                                  
-                                  // Reset max reached flag when country changes
-                                  _isPhoneMaxReached = false;
-                                  
                                   // Update complete phone number
                                   if (_phoneController.text.isNotEmpty) {
                                     _completePhoneNumber = '$_countryCode${_phoneController.text}';
-                                    
-                                    // Update digit count and check if max reached
-                                    _phoneDigitCount = _phoneController.text.length;
-                                    _isPhoneMaxReached = _phoneDigitCount >= _requiredPhoneDigits;
-                                  } else {
-                                    _phoneDigitCount = 0;
                                   }
                                 });
                               },
@@ -1098,39 +936,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         ),
                         const SizedBox(height: 16),
                         
-                        // Role indication (simplified)
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                IconMapping.person,
-                                color: theme.colorScheme.secondary,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _selectedRole == 'admin'
-                                      ? 'Setting up as Savings Manager'
-                                      : 'Setting up as Savings Contributor',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        // Role indication
+                        RoleTypeIndicator(
+                          role: _selectedRole,
+                          prefix: 'Setting up as',
+                          colorScheme: theme.colorScheme,
                         ),
                         const SizedBox(height: 16),
                         
