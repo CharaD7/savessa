@@ -30,7 +30,7 @@
 
 ## 🌟 Overview
 
-Savessa is a cutting-edge mobile app designed to revolutionize community-based savings groups. Built with scalability and inclusivity in mind, Savessa combines intuitive design, advanced analytics, and blockchain transparency to empower users across Africa and beyond.
+Savessa is a cutting-edge mobile app designed to revolutionize community-based savings groups. Developed by CharaD7, founder of CharaTech, Savessa is built with scalability and inclusivity in mind, combining intuitive design, advanced analytics, and blockchain transparency to empower users across Africa and beyond.
 
 Starting in Ghana with plans to expand across Africa and globally, Savessa addresses the challenges faced by traditional community savings groups by providing a secure, transparent, and user-friendly platform for managing group savings and contributions.
 
@@ -303,17 +303,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
+- **Developer**: CharaD7, Founder of CharaTech
 - **Project Website**: [savessa.com](https://savessa.com)
 - **Email**: info@savessa.com
 - **Twitter**: [@savessaapp](https://twitter.com/savessaapp)
 - **LinkedIn**: [Savessa](https://linkedin.com/company/savessa)
+- **GitHub**: [CharaD7](https://github.com/CharaD7)
 
 ---
 
 <div align="center">
   
-  Made with ❤️ by the Savessa Team
+  Made with ❤️ by CharaD7, Founder of CharaTech
   
-  Copyright © 2025 Savessa. All rights reserved.
+  Copyright © 2025 CharaD7 (CharaTech). All rights reserved.
   
 </div>
