@@ -984,6 +984,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: Colors.red, width: 2),
                                 ),
+                                errorStyle: TextStyles.errorWithGlow(),
                               ),
                               initialCountryCode: _selectedCountry.code,
                               style: const TextStyle(
