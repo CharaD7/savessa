@@ -6,8 +6,6 @@ import 'package:feather_icons/feather_icons.dart';
 
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../shared/widgets/auth/login_form.dart';
-import '../../../../shared/widgets/auth/role_type_indicator.dart';
 import '../../../../core/constants/icon_mapping.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../services/validation/email_validator_service.dart';
@@ -333,10 +331,38 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 const SizedBox(height: 16),
                 
                 // Role indication
-                RoleTypeIndicator(
-                  role: _selectedRole,
-                  prefix: 'Logging in as',
-                  colorScheme: theme.colorScheme,
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        IconMapping.person,
+                        color: theme.colorScheme.secondary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _selectedRole == 'admin'
+                              ? 'Logging in as Savings Manager'
+                              : 'Logging in as Savings Contributor',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 
                 const SizedBox(height: 32),
@@ -359,15 +385,99 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       width: 1,
                     ),
                   ),
-                  child: LoginForm(
-                    formKey: _formKey,
-                    emailController: _emailController,
-                    passwordController: _passwordController,
-                    emailFocus: _emailFocus,
-                    passwordFocus: _passwordFocus,
-                    isLoading: _isLoading,
-                    onLogin: _login,
-                    colorScheme: theme.colorScheme,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Email field
+                        ValidatedTextField(
+                          label: 'auth.email'.tr(),
+                          controller: _emailController,
+                          focusNode: _emailFocus,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: const Icon(IconMapping.email),
+                          required: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'errors.required_field'.tr();
+                            }
+                            
+                            // Use EmailValidatorService for better validation
+                            final emailValidator = EmailValidatorService();
+                            if (!emailValidator.isValidFormat(value)) {
+                              // Check if we can suggest a correction
+                              final suggestion = emailValidator.suggestCorrection(value);
+                              if (suggestion != null) {
+                                return 'Invalid email format. Did you mean $suggestion?';
+                              }
+                              return 'errors.invalid_email'.tr();
+                            }
+                            return null;
+                          },
+                          onFieldSubmitted: (_) {
+                            FocusScope.of(context).requestFocus(_passwordFocus);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Password field
+                        ValidatedTextField(
+                          label: 'auth.password'.tr(),
+                          controller: _passwordController,
+                          focusNode: _passwordFocus,
+                          obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          prefixIcon: const Icon(IconMapping.lock),
+                          required: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'errors.required_field'.tr();
+                            }
+                            
+                            final passwordValidator = PasswordValidatorService();
+                            final (isPolicyValid, policyError) = passwordValidator.validatePolicy(value);
+                            if (!isPolicyValid) {
+                              return policyError;
+                            }
+                            
+                            return null;
+                          },
+                          onFieldSubmitted: (_) {
+                            _login();
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        // Forgot password link
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              context.go('/forgot-password');
+                            },
+                            child: Text(
+                              'auth.forgot_password'.tr(),
+                              style: TextStyle(
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Login button
+                        AppButton(
+                          label: 'auth.login'.tr(),
+                          onPressed: _login,
+                          type: ButtonType.primary,
+                          isFullWidth: true,
+                          height: 56,
+                          borderRadius: 12,
+                          isLoading: _isLoading,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 
