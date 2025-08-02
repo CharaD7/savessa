@@ -10,8 +10,6 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../shared/widgets/auth/signup_form.dart';
-import '../../../../shared/widgets/auth/role_type_indicator.dart';
 import '../../../../services/database/database_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/password_validator_service.dart';
@@ -936,11 +934,39 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         ),
                         const SizedBox(height: 16),
                         
-                        // Role indication
-                        RoleTypeIndicator(
-                          role: _selectedRole,
-                          prefix: 'Setting up as',
-                          colorScheme: theme.colorScheme,
+                        // Role indication (simplified)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                IconMapping.person,
+                                color: theme.colorScheme.secondary,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _selectedRole == 'admin'
+                                      ? 'Setting up as Savings Manager'
+                                      : 'Setting up as Savings Contributor',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         
