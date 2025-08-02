@@ -8,6 +8,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
 import '../../../../core/constants/icon_mapping.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
@@ -181,8 +182,8 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
           AppTextField(
             controller: widget.firstNameController,
             focusNode: widget.firstNameFocus,
-            label: 'auth.first_name'.tr(),
-            hint: 'auth.enter_first_name'.tr(),
+            label: 'First Name',
+            hint: 'Enter First Name',
             prefixIcon: const Icon(IconMapping.person),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -199,7 +200,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             onFieldSubmitted: (_) {
               FocusScope.of(context).requestFocus(widget.middleNameFocus);
             },
-            suffixIcon: widget.firstNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+            suffixIcon: widget.firstNameCompleted ? const Icon(IconMapping.checkCircle, color: Colors.green) : null,
           ),
           const SizedBox(height: 16),
           
@@ -207,8 +208,8 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
           AppTextField(
             controller: widget.middleNameController,
             focusNode: widget.middleNameFocus,
-            label: 'auth.middle_name'.tr(),
-            hint: 'auth.enter_middle_name'.tr(),
+            label: 'Middle Name',
+            hint: 'Enter Middle Name',
             prefixIcon: const Icon(IconMapping.person),
             validator: (value) {
               // Middle name is optional, so no validation required
@@ -223,7 +224,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             onFieldSubmitted: (_) {
               FocusScope.of(context).requestFocus(widget.lastNameFocus);
             },
-            suffixIcon: widget.middleNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+            suffixIcon: widget.middleNameCompleted ? const Icon(IconMapping.checkCircle, color: Colors.green) : null,
           ),
           const SizedBox(height: 16),
           
@@ -231,8 +232,8 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
           AppTextField(
             controller: widget.lastNameController,
             focusNode: widget.lastNameFocus,
-            label: 'auth.last_name'.tr(),
-            hint: 'auth.enter_last_name'.tr(),
+            label: 'Last Name',
+            hint: 'Enter Last Name',
             prefixIcon: const Icon(IconMapping.person),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -249,13 +250,14 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             onFieldSubmitted: (_) {
               FocusScope.of(context).requestFocus(widget.emailFocus);
             },
-            suffixIcon: widget.lastNameCompleted ? const Icon(IconMapping.checkCircle) : null,
+            suffixIcon: widget.lastNameCompleted ? const Icon(IconMapping.checkCircle, color: Colors.green) : null,
           ),
           const SizedBox(height: 16),
           
           // Contact/Email field with validation
           ValidatedTextField(
-            label: 'auth.email'.tr(),
+            label: 'Email',
+            hint: 'username@domain.extension',
             controller: widget.emailController,
             focusNode: widget.emailFocus,
             keyboardType: TextInputType.emailAddress,
@@ -303,7 +305,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'auth.phone'.tr(),
+                'Phone Number',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -314,19 +316,53 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                 controller: widget.phoneController,
                 focusNode: widget.phoneFocus,
                 decoration: InputDecoration(
-                  hintText: 'auth.enter_phone'.tr(),
-                  prefixIcon: const Icon(IconMapping.phone),
+                  hintText: 'Enter phone number',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                  // Removed prefixIcon to avoid duplicate phone icons
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.1),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
                 ),
                 initialCountryCode: widget.selectedCountry.code,
                 countries: countries,
                 showDropdownIcon: true,
                 dropdownIconPosition: IconPosition.trailing,
+                flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
                 disableLengthCheck: false,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                dropdownTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                dropdownIcon: const Icon(
+                  IconMapping.arrowDownward,
+                  color: Colors.white,
+                  size: 18,
+                ),
                 validator: (phone) {
                   if (phone == null || phone.number.isEmpty) {
                     return 'errors.required_field'.tr();
@@ -484,6 +520,26 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             },
             // Listen for changes to update validation status in real-time
             onChanged: (value) {
+              // Update validation status based on whether passwords match
+              setState(() {
+                if (value.isEmpty) {
+                  // Empty field - no validation status
+                  if (widget.onConfirmPasswordValidationComplete != null) {
+                    widget.onConfirmPasswordValidationComplete!(ValidationStatus.none);
+                  }
+                } else if (value == widget.passwordController.text) {
+                  // Passwords match - valid
+                  if (widget.onConfirmPasswordValidationComplete != null) {
+                    widget.onConfirmPasswordValidationComplete!(ValidationStatus.valid);
+                  }
+                } else {
+                  // Passwords don't match - invalid
+                  if (widget.onConfirmPasswordValidationComplete != null) {
+                    widget.onConfirmPasswordValidationComplete!(ValidationStatus.invalid);
+                  }
+                }
+              });
+              
               if (widget.onFieldCompletion != null) {
                 widget.onFieldCompletion!('confirm_password', value);
               }
