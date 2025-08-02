@@ -11,12 +11,13 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../shared/widgets/auth/login_form.dart';
-import '../../../../shared/widgets/auth/signup_form.dart';
-import '../../../../shared/widgets/auth/role_type_indicator.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
+import '../../../auth/presentation/components/role_indicator_component.dart';
+import '../../../auth/presentation/components/login_signup_toggle_component.dart';
+import '../../../auth/presentation/components/login_form_component.dart';
+import '../../../auth/presentation/components/signup_form_component.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   final String? selectedRole;
@@ -46,8 +47,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   final _loginPasswordController = TextEditingController();
   
   // Text editing controllers for signup
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _contactController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
@@ -56,16 +60,30 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   final _loginPasswordFocus = FocusNode();
   
   // Focus nodes for signup
-  final _nameFocus = FocusNode();
+  final _firstNameFocus = FocusNode();
+  final _middleNameFocus = FocusNode();
+  final _lastNameFocus = FocusNode();
   final _contactFocus = FocusNode();
+  final _phoneFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmPasswordFocus = FocusNode();
   
+  // Phone field variables
+  String _countryCode = '+1'; // Default country code (US)
+  String _completePhoneNumber = ''; // Complete phone number with country code
+  Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
+  
   // Track which fields are completed
-  bool _nameCompleted = false;
+  bool _firstNameCompleted = false;
+  bool _middleNameCompleted = false;
+  bool _lastNameCompleted = false;
   bool _contactCompleted = false;
+  bool _phoneCompleted = false;
   bool _passwordCompleted = false;
   bool _confirmPasswordCompleted = false;
+  
+  // Validation status tracking for phone
+  ValidationStatus _phoneValidationStatus = ValidationStatus.none;
   
   // Validation status tracking
   ValidationStatus _emailValidationStatus = ValidationStatus.none;
@@ -107,6 +125,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _selectedRole = widget.selectedRole!;
     }
     
+    // Detect user's country based on location
+    _detectUserCountry();
+    
     // Delay initialization to prevent UI jank during animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -125,7 +146,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         // Add listeners to all focus nodes using the centralized handler
         _loginEmailFocus.addListener(() => _handleFocusChange(_loginEmailFocus, 'login_email'));
         _loginPasswordFocus.addListener(() => _handleFocusChange(_loginPasswordFocus, 'login_password'));
-        _nameFocus.addListener(() => _handleFocusChange(_nameFocus, 'name'));
+        _firstNameFocus.addListener(() => _handleFocusChange(_firstNameFocus, 'first_name'));
+        _middleNameFocus.addListener(() => _handleFocusChange(_middleNameFocus, 'middle_name'));
+        _lastNameFocus.addListener(() => _handleFocusChange(_lastNameFocus, 'last_name'));
+        _phoneFocus.addListener(() => _handleFocusChange(_phoneFocus, 'phone'));
         _contactFocus.addListener(() => _handleFocusChange(_contactFocus, 'contact'));
         _passwordFocus.addListener(() => _handleFocusChange(_passwordFocus, 'password'));
         _confirmPasswordFocus.addListener(() => _handleFocusChange(_confirmPasswordFocus, 'confirm_password'));
@@ -142,12 +166,18 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     _loginPasswordFocus.dispose();
     
     // Dispose signup controllers and focus nodes
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
     _contactController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _nameFocus.dispose();
+    _firstNameFocus.dispose();
+    _middleNameFocus.dispose();
+    _lastNameFocus.dispose();
     _contactFocus.dispose();
+    _phoneFocus.dispose();
     _passwordFocus.dispose();
     _confirmPasswordFocus.dispose();
     
@@ -171,8 +201,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _confirmPasswordValidationStatus = ValidationStatus.none;
       
       // Reset field completion status
-      _nameCompleted = false;
+      _firstNameCompleted = false;
+      _middleNameCompleted = false;
+      _lastNameCompleted = false;
       _contactCompleted = false;
+      _phoneCompleted = false;
       _passwordCompleted = false;
       _confirmPasswordCompleted = false;
       
@@ -183,8 +216,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         _loginPasswordController.clear();
       } else {
         // Switching to login mode, clear signup fields
-        _nameController.clear();
+        _firstNameController.clear();
+        _middleNameController.clear();
+        _lastNameController.clear();
         _contactController.clear();
+        _phoneController.clear();
         _passwordController.clear();
         _confirmPasswordController.clear();
       }
@@ -196,7 +232,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         if (_isLoginMode) {
           _loginEmailFocus.requestFocus();
         } else {
-          _nameFocus.requestFocus();
+          _firstNameFocus.requestFocus();
         }
       }
     });
@@ -225,10 +261,32 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       bool stateChanged = false;
       
       switch (field) {
-        case 'name':
+        case 'first_name':
           isCompleted = value.trim().isNotEmpty;
-          if (isCompleted != _nameCompleted) {
-            _nameCompleted = isCompleted;
+          if (isCompleted != _firstNameCompleted) {
+            _firstNameCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'middle_name':
+          isCompleted = value.trim().isNotEmpty;
+          if (isCompleted != _middleNameCompleted) {
+            _middleNameCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'last_name':
+          isCompleted = value.trim().isNotEmpty;
+          if (isCompleted != _lastNameCompleted) {
+            _lastNameCompleted = isCompleted;
+            stateChanged = true;
+          }
+          break;
+        case 'phone':
+          // Validation for phone - use simple format check for performance
+          isCompleted = value.trim().isNotEmpty && value.length >= 8;
+          if (isCompleted != _phoneCompleted) {
+            _phoneCompleted = isCompleted;
             stateChanged = true;
           }
           break;
@@ -305,6 +363,65 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     if (_voiceGuidanceEnabled && _currentField.isNotEmpty) {
       _playFieldGuidance(_currentField);
     }
+  }
+  
+  // Method to detect user's country based on location
+  Future<void> _detectUserCountry() async {
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Permissions are denied, use default country
+          debugPrint('Location permissions are denied, using default country');
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are permanently denied, use default country
+        debugPrint('Location permissions are permanently denied, using default country');
+        return;
+      }
+      
+      // Get current position
+      final Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
+        timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
+      );
+      
+      // Use the position to determine the country
+      // This is a simplified approach - in a real app, you would use a geocoding service
+      // For now, we'll use a simple mapping of coordinates to country codes
+      final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
+      
+      // Find the country in the countries list
+      try {
+        final Country country = countries.firstWhere(
+          (c) => c.code.toLowerCase() == countryCode.toLowerCase(),
+          orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+        );
+        
+        // Update the selected country
+        setState(() {
+          _selectedCountry = country;
+          _countryCode = '+${country.dialCode}';
+        });
+      } catch (e) {
+        debugPrint('Error finding country: $e');
+      }
+    } catch (e) {
+      debugPrint('Error detecting user country: $e');
+    }
+  }
+  
+  // Helper method to get country code from coordinates
+  Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
+    // In a real app, you would use a geocoding service like Google Maps Geocoding API
+    // For now, we'll return a default country code
+    // This is a placeholder implementation
+    return 'US';
   }
   
   // Login method
@@ -386,8 +503,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     // First check if the form is valid using standard validation
     if (!_signupFormKey.currentState!.validate()) {
       // Find the first field with an error and focus it
-      if (_nameController.text.isEmpty) {
-        _nameFocus.requestFocus();
+      if (_firstNameController.text.isEmpty) {
+        _firstNameFocus.requestFocus();
+        return;
+      } else if (_lastNameController.text.isEmpty) {
+        _lastNameFocus.requestFocus();
         return;
       } else if (_contactController.text.isEmpty) {
         _contactFocus.requestFocus();
@@ -485,7 +605,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       });
       
       // Focus on the first field for retry
-      _nameFocus.requestFocus();
+      _firstNameFocus.requestFocus();
     } finally {
       if (mounted && _isLoading) {
         setState(() {
@@ -495,12 +615,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     }
   }
   
-  // Build password strength indicator widget
-  Widget _buildPasswordStrengthIndicator() {
-    return PasswordStrengthIndicator(
-      password: _passwordController.text,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -608,77 +722,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 24),
                   
                   // Login/Signup toggle
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Login tab
-                        GestureDetector(
-                          onTap: () {
-                            if (!_isLoginMode) {
-                              _toggleMode();
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: _isLoginMode 
-                                  ? theme.colorScheme.secondary 
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Text(
-                              'Login',
-                              style: TextStyle(
-                                color: _isLoginMode 
-                                    ? theme.colorScheme.onSecondary 
-                                    : theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // Signup tab
-                        GestureDetector(
-                          onTap: () {
-                            if (_isLoginMode) {
-                              _toggleMode();
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: !_isLoginMode 
-                                  ? theme.colorScheme.secondary 
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                color: !_isLoginMode 
-                                    ? theme.colorScheme.onSecondary 
-                                    : theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  LoginSignupToggleComponent(
+                    mode: _isLoginMode ? 'login' : 'signup',
+                    onToggle: _toggleMode,
+                    useTabStyle: true,
                   ),
                 
                   const SizedBox(height: 16),
@@ -728,10 +775,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 16),
                   
                   // Role indication
-                  RoleTypeIndicator(
-                    role: _selectedRole,
+                  RoleIndicatorComponent(
+                    selectedRole: _selectedRole,
                     prefix: 'Setting up as:',
-                    colorScheme: theme.colorScheme,
                   ),
                   
                   const SizedBox(height: 16),
@@ -788,35 +834,84 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Build login form
   Widget _buildLoginForm() {
-    return LoginForm(
+    return LoginFormComponent(
       formKey: _loginFormKey,
       emailController: _loginEmailController,
       passwordController: _loginPasswordController,
       emailFocus: _loginEmailFocus,
       passwordFocus: _loginPasswordFocus,
-      isLoading: _isLoading,
       onLogin: _login,
-      colorScheme: Theme.of(context).colorScheme,
+      isLoading: _isLoading,
+      loginButtonLabel: 'Login',
+      loginButtonHeight: 56,
+      loginButtonBorderRadius: 12,
     );
   }
   
   // Build signup form
   Widget _buildSignupForm() {
-    return SignUpForm(
+    return SignUpFormComponent(
       formKey: _signupFormKey,
-      nameController: _nameController,
+      firstNameController: _firstNameController,
+      middleNameController: _middleNameController,
+      lastNameController: _lastNameController,
       emailController: _contactController,
+      phoneController: _phoneController,
       passwordController: _passwordController,
       confirmPasswordController: _confirmPasswordController,
-      nameFocus: _nameFocus,
+      firstNameFocus: _firstNameFocus,
+      middleNameFocus: _middleNameFocus,
+      lastNameFocus: _lastNameFocus,
       emailFocus: _contactFocus,
+      phoneFocus: _phoneFocus,
       passwordFocus: _passwordFocus,
       confirmPasswordFocus: _confirmPasswordFocus,
-      isLoading: _isLoading,
       onSignup: _signup,
-      onFieldCompleted: _checkFieldCompletion,
-      colorScheme: Theme.of(context).colorScheme,
+      selectedCountry: _selectedCountry,
+      onFieldCompletion: _checkFieldCompletion,
+      onCountryChanged: (country) {
+        setState(() {
+          _selectedCountry = country;
+          _countryCode = '+${country.dialCode}';
+        });
+      },
+      isLoading: _isLoading,
+      emailValidationStatus: _emailValidationStatus,
+      phoneValidationStatus: _phoneValidationStatus,
+      passwordValidationStatus: _passwordValidationStatus,
+      confirmPasswordValidationStatus: _confirmPasswordValidationStatus,
+      onEmailValidationComplete: (status) {
+        setState(() {
+          _emailValidationStatus = status;
+          
+          // If valid, move to next field
+          if (_emailValidationStatus == ValidationStatus.valid) {
+            _phoneFocus.requestFocus();
+          }
+        });
+      },
+      onPasswordValidationComplete: (status) {
+        setState(() {
+          _passwordValidationStatus = status;
+          
+          // If valid, move to next field
+          if (_passwordValidationStatus == ValidationStatus.valid) {
+            _confirmPasswordFocus.requestFocus();
+          }
+        });
+      },
+      onConfirmPasswordValidationComplete: (status) {
+        setState(() {
+          _confirmPasswordValidationStatus = status;
+        });
+      },
+      firstNameCompleted: _firstNameCompleted,
+      middleNameCompleted: _middleNameCompleted,
+      lastNameCompleted: _lastNameCompleted,
+      phoneCompleted: _phoneCompleted,
       signupButtonLabel: 'Create Account',
+      signupButtonHeight: 56,
+      signupButtonBorderRadius: 12,
     );
   }
 }
