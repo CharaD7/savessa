@@ -200,7 +200,8 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
               final (isValid, errorMsg) = result;
               setState(() {
                 _validationStatus = isValid ? ValidationStatus.valid : ValidationStatus.invalid;
-                _errorMessage = errorMsg;
+                // Only set error message if validation failed, otherwise clear it
+                _errorMessage = isValid ? null : errorMsg;
                 _isValidating = false;
               });
               
@@ -233,6 +234,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
       // If no async validator but text is not empty and passed sync validation
       setState(() {
         _validationStatus = ValidationStatus.valid;
+        _errorMessage = null; // Clear any previous error message when validation is valid
       });
       
       if (widget.onValidationComplete != null) {
@@ -332,14 +334,24 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.gold, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-        ),
+        focusedBorder: _validationStatus == ValidationStatus.valid
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.green, width: 2),
+              )
+            : OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.gold, width: 2),
+              ),
+        enabledBorder: _validationStatus == ValidationStatus.valid
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.green, width: 1),
+              )
+            : OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+              ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
