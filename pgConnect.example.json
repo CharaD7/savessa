@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "CONNECTION_NAME",
+      "Group": "YOUR_GROUP_NAME",
+      "Host": "some-host.aivencloud.com",
+      "Port": 24322,
+      "MaintenanceDB": "dbname",
+      "Username": "username",
+      "SSLMode": "require"
+    }
+  }
+}
+
