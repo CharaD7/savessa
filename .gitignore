@@ -17,6 +17,9 @@ doc/api/
 
 # dotenv environment variables file
 .env*
+# Allow example env files to be committed
+!.env.example
+!**/.env.example
 
 # Avoid committing generated Javascript files:
 *.dart.js
@@ -181,4 +184,7 @@ fabric.properties
 !.idea/runConfigurations
 
 # End of https://www.toptal.com/developers/gitignore/api/dart,flutter,intellij+all
+
+# Local database connection config (contains secrets)
+pgConnect.json
 
