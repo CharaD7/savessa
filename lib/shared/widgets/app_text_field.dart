@@ -146,12 +146,12 @@ class _AppTextFieldState extends State<AppTextField> {
       decoration: InputDecoration(
         labelText: widget.label + (widget.required ? ' *' : ''),
         labelStyle: TextStyle(
-          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withValues(alpha: 0.9),
           fontWeight: _focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
         ),
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.7), // Light hint text for better visibility on dark background
+          color: Colors.white.withValues(alpha: 0.7), // Light hint text for better visibility on dark background
         ),
         helperText: widget.helperText,
         errorText: widget.errorText,
@@ -162,7 +162,7 @@ class _AppTextFieldState extends State<AppTextField> {
         prefixIcon: widget.prefixIcon != null 
             ? IconTheme(
                 data: IconThemeData(
-                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withValues(alpha: 0.9),
                 ),
                 child: widget.prefixIcon!,
               )
@@ -173,7 +173,7 @@ class _AppTextFieldState extends State<AppTextField> {
         contentPadding: widget.contentPadding,
         counterText: widget.showCounter ? null : '',
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1), // More transparent background for dark theme
+        fillColor: Colors.white.withValues(alpha: 0.1), // More transparent background for dark theme
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -184,7 +184,7 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -194,63 +194,73 @@ class _AppTextFieldState extends State<AppTextField> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
+        // Remove extra built-in padding around suffix icons for password fields
+        suffixIconConstraints: widget.obscureText
+            ? const BoxConstraints(minWidth: 0, minHeight: 0)
+            : null,
       ),
     );
   }
+	Widget? _buildSuffixIcon() {
+		if (widget.suffixIcon != null) {
+			return widget.suffixIcon;
+		}
 
-  Widget? _buildSuffixIcon() {
-    if (widget.suffixIcon != null) {
-      return widget.suffixIcon;
-    }
+		final List<Widget> suffixIcons = [];
 
-    final List<Widget> suffixIcons = [];
+		// Add clear button if text is not empty and field is enabled
+		if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
+			final clearBtn = IconButton(
+				padding: EdgeInsets.zero,
+				constraints: const BoxConstraints(minHeight: 28),
+				visualDensity: VisualDensity.compact,
+				icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withAlpha(230)),
+				onPressed: () {
+					_controller.clear();
+					if (widget.onChanged != null) {
+						widget.onChanged!('');
+					}
+				},
+				splashRadius: 18,
+			);
+			suffixIcons.add(clearBtn);
+		}
 
-    // Add clear button if text is not empty and field is enabled
-    if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
-      suffixIcons.add(
-        IconButton(
-          icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withOpacity(0.9)),
-          onPressed: () {
-            _controller.clear();
-            if (widget.onChanged != null) {
-              widget.onChanged!('');
-            }
-          },
-          splashRadius: 20,
-        ),
-      );
-    }
+		// Add password toggle if field is password
+		if (widget.obscureText && widget.showPasswordToggle) {
+			final eyeIcon = IconButton(
+				padding: EdgeInsets.zero,
+				constraints: const BoxConstraints(minHeight: 28),
+				visualDensity: VisualDensity.compact,
+				icon: Icon(
+					_obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+					size: 20,
+					color: Colors.white.withAlpha(230),
+				),
+				onPressed: () {
+					setState(() {
+						_obscureText = !_obscureText;
+					});
+				},
+				splashRadius: 20,
+			);
+			suffixIcons.add(eyeIcon);
+		}
 
-    // Add password toggle if field is password
-    if (widget.obscureText && widget.showPasswordToggle) {
-      suffixIcons.add(
-        IconButton(
-          icon: Icon(
-            _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-            size: 20,
-            color: Colors.white.withOpacity(0.9),
-          ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-          splashRadius: 20,
-        ),
-      );
-    }
+		if (suffixIcons.isEmpty) {
+			return null;
+		}
 
-    if (suffixIcons.isEmpty) {
-      return null;
-    }
+		// Add 5px spacing between each icon
+		return Row(
+			mainAxisSize: MainAxisSize.min,
+			children: [
+				for (int i = 0; i < suffixIcons.length; i++) ...[
+					if (i > 0) const SizedBox(width: 5),
+					suffixIcons[i],
+				]
+			],
+		);
+	}
 
-    if (suffixIcons.length == 1) {
-      return suffixIcons.first;
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: suffixIcons,
-    );
-  }
 }

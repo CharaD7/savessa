@@ -302,12 +302,12 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
       decoration: InputDecoration(
         labelText: widget.label + (widget.required ? ' *' : ''),
         labelStyle: TextStyle(
-          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+          color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withValues(alpha: 0.9),
           fontWeight: _focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
         ),
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.7), // Light hint text for better visibility on dark background
+          color: Colors.white.withValues(alpha: 0.7), // Light hint text for better visibility on dark background
         ),
         helperText: widget.helperText,
         errorText: _errorMessage,
@@ -318,7 +318,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         prefixIcon: widget.prefixIcon != null 
             ? IconTheme(
                 data: IconThemeData(
-                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withOpacity(0.9),
+                  color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withValues(alpha: 0.9),
                 ),
                 child: widget.prefixIcon!,
               )
@@ -329,7 +329,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         contentPadding: widget.contentPadding,
         counterText: widget.showCounter ? null : '',
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1), // More transparent background for dark theme
+        fillColor: Colors.white.withValues(alpha: 0.1), // More transparent background for dark theme
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -350,7 +350,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
               )
             : OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -360,6 +360,10 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
+        // Remove extra built-in padding around suffix icons for password fields
+        suffixIconConstraints: widget.obscureText
+            ? const BoxConstraints(minWidth: 0, minHeight: 0)
+            : null,
       ),
     );
   }
@@ -383,20 +387,38 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         switch (_validationStatus) {
           case ValidationStatus.valid:
             suffixIcons.add(
-              const Icon(
-                IconMapping.checkCircle,
-                color: Colors.green,
-                size: 20,
-              ),
+              widget.obscureText
+                  ? const Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: Icon(
+                        IconMapping.checkCircle,
+                        color: Colors.green,
+                        size: 20,
+                      ),
+                    )
+                  : const Icon(
+                      IconMapping.checkCircle,
+                      color: Colors.green,
+                      size: 20,
+                    ),
             );
             break;
           case ValidationStatus.invalid:
             suffixIcons.add(
-              const Icon(
-                IconMapping.error,
-                color: Colors.red,
-                size: 20,
-              ),
+              widget.obscureText
+                  ? const Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: Icon(
+                        IconMapping.error,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                    )
+                  : const Icon(
+                      IconMapping.error,
+                      color: Colors.red,
+                      size: 20,
+                    ),
             );
             break;
           default:
@@ -412,35 +434,47 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
     } else {
       // Add clear button if text is not empty and field is enabled
       if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
-        suffixIcons.add(
-          IconButton(
-            icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withOpacity(0.9)),
-            onPressed: () {
-              _controller.clear();
-              if (widget.onChanged != null) {
-                widget.onChanged!('');
-              }
-            },
-            splashRadius: 20,
-          ),
+        final clearBtn = IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          visualDensity: VisualDensity.compact,
+          icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withValues(alpha: 0.9)),
+          onPressed: () {
+            _controller.clear();
+            if (widget.onChanged != null) {
+              widget.onChanged!('');
+            }
+          },
+          splashRadius: 18,
         );
+        // For password fields, shift clear icon 10px to the right by adding left padding
+        final clearWrapped = widget.obscureText
+            ? Padding(padding: const EdgeInsets.only(left: 10, right: 10), child: clearBtn)
+            : clearBtn;
+        suffixIcons.add(clearWrapped);
       }
       
       // Add password toggle if field is password
       if (widget.obscureText && widget.showPasswordToggle) {
         suffixIcons.add(
-          IconButton(
-            icon: Icon(
-              _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-              size: 20,
-              color: Colors.white.withOpacity(0.9),
+          Padding(
+            padding: const EdgeInsets.only(right: 5), // shift eye icon 5px to the left
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+                size: 20,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+              splashRadius: 18,
             ),
-            onPressed: () {
-              setState(() {
-                _obscureText = !_obscureText;
-              });
-            },
-            splashRadius: 20,
           ),
         );
       }
@@ -454,10 +488,41 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
       return suffixIcons.first;
     }
     
-    // If we have multiple suffix icons, wrap them in a row
+    // If we have multiple suffix icons, wrap them in a row with 5px spacing around the clear icon
+    if (suffixIcons.length == 2) {
+      // [A, B] -> always 5px between
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          suffixIcons[0],
+          const SizedBox(width: 5),
+          suffixIcons[1],
+        ],
+      );
+    } else if (suffixIcons.length == 3) {
+      // Expected order: [validation, clear, eye] => 5px between each neighbor of clear
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          suffixIcons[0],
+          const SizedBox(width: 5), // validation -> clear
+          suffixIcons[1],
+          const SizedBox(width: 5), // clear -> eye
+          suffixIcons[2],
+        ],
+      );
+    }
+
+    // Fallback: join with 5px spacing between each
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: suffixIcons,
+      children: [
+        for (int i = 0; i < suffixIcons.length; i++) ...[
+          if (i > 0) const SizedBox(width: 5),
+          suffixIcons[i],
+        ]
+      ],
     );
   }
+
 }
