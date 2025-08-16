@@ -43,6 +43,7 @@ dependencies:
   intl_phone_field: ^3.2.0
   geolocator: ^14.0.2
   geocoding: ^2.1.1
+  flutter_native_splash: ^2.4.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -59,3 +60,11 @@ flutter:
     - assets/icons/svg/
     - assets/sounds/
     - .env
+
+flutter_native_splash:
+  color: "#4B2E83" # fallback background (royal purple)
+  image: assets/images/logo.png
+  android_12:
+    color: "#4B2E83"
+    image: assets/images/logo.png
+  web: false
