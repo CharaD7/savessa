@@ -23,6 +23,7 @@ class IconMapping {
   static const IconData addBox = FeatherIcons.plus;
   static const IconData arrowUpward = FeatherIcons.arrowUp;
   static const IconData arrowDownward = FeatherIcons.arrowDown;
+  static const IconData location = FeatherIcons.mapPin;
   
   // Bottom navigation
   static const IconData home = FeatherIcons.home;
