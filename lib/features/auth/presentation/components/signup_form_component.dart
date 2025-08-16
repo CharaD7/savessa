@@ -8,7 +8,6 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
 import '../../../../shared/widgets/password_strength_indicator.dart';
 import '../../../../core/constants/icon_mapping.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../services/validation/email_validator_service.dart';
 import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/phone_validator_service.dart';
@@ -165,11 +164,34 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
   // Local variables to track state
   String _countryCode = '';
   String _completePhoneNumber = '';
+  int _phoneDigits = 0;
   
   @override
   void initState() {
     super.initState();
     _countryCode = '+${widget.selectedCountry.dialCode}';
+    // Rebuild when phone field focus changes to update placeholder text
+    widget.phoneFocus.addListener(_onPhoneFocusChange);
+  }
+  
+  void _onPhoneFocusChange() {
+    if (mounted) setState(() {});
+  }
+  
+  @override
+  void didUpdateWidget(covariant SignUpFormComponent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.phoneFocus != widget.phoneFocus) {
+      oldWidget.phoneFocus.removeListener(_onPhoneFocusChange);
+      widget.phoneFocus.addListener(_onPhoneFocusChange);
+    }
+  }
+  
+  @override
+  void dispose() {
+    // Remove listener; do not dispose as focus node is owned by parent
+    widget.phoneFocus.removeListener(_onPhoneFocusChange);
+    super.dispose();
   }
   
   @override
@@ -304,19 +326,12 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Phone Number',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
+              // Removed explicit 'Phone Number' label per requirements
               IntlPhoneField(
                 controller: widget.phoneController,
                 focusNode: widget.phoneFocus,
                 decoration: InputDecoration(
-                  hintText: 'Enter phone number',
+                  hintText: widget.phoneFocus.hasFocus ? 'Enter phone number' : 'Phone number',
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                   ),
@@ -342,6 +357,10 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                   focusedErrorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
+                  errorStyle: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 initialCountryCode: widget.selectedCountry.code,
@@ -380,6 +399,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                   setState(() {
                     _countryCode = phone.countryCode;
                     _completePhoneNumber = phone.completeNumber;
+                    _phoneDigits = phone.number.length;
                   });
                   
                   if (widget.onFieldCompletion != null) {
@@ -389,6 +409,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                 onCountryChanged: (country) {
                   setState(() {
                     _countryCode = '+${country.dialCode}';
+                    _phoneDigits = widget.phoneController.text.replaceAll(RegExp(r'\D'), '').length;
                   });
                   
                   if (widget.onCountryChanged != null) {
@@ -400,20 +421,57 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                   FocusScope.of(context).requestFocus(widget.passwordFocus);
                 },
               ),
+              // Custom animated count indicator
+              Builder(
+                builder: (context) {
+                  final validLengths = PhoneValidatorService.getExpectedLength(widget.selectedCountry.code);
+                  final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
+                  final maxLen = PhoneValidatorService.getMaxExpectedLength(widget.selectedCountry.code);
+                  final isAcceptable = validLengths.contains(_phoneDigits);
+                  final targetColor = isAcceptable
+                      ? Color.lerp(Colors.red, Colors.green, ((maxLen - minLen) == 0)
+                          ? (_phoneDigits >= minLen ? 1.0 : 0.0)
+                          : ((_phoneDigits - minLen).clamp(0, maxLen - minLen) / (maxLen - minLen)))!
+                      : Colors.red;
+                  final rangeLabel = minLen == maxLen ? '$maxLen' : '$minLen-$maxLen';
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6.0),
+                    child: TweenAnimationBuilder<Color?>(
+                      tween: ColorTween(begin: Colors.red, end: targetColor),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, color, _) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$_phoneDigits / $rangeLabel',
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
               if (widget.phoneValidationStatus == ValidationStatus.valid)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         IconMapping.checkCircle,
                         color: Colors.green,
                         size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'Valid phone number',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.green,
                           fontSize: 12,
                         ),
