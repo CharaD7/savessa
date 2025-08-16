@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:intl_phone_field/countries.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:savessa/services/location_country_service.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
@@ -332,7 +330,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       }
       
       // Only update state once if any changes were made
-      if (stateChanged  mounted) {
+      if (stateChanged && mounted) {
         setState(() {
           // State variables were already updated above
         });
@@ -376,62 +374,24 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     }
   }
 
-  // Method to detect user's country based on location
-  // Method to detect user's country based on location
-  Futurevoid _detectUserCountry() async {
+  // Trigger detection on first phone focus, respecting preference
+  Future<void> _triggerCountryDetectionOnFocus() async {
+    if (_countryDetectionRequested) return;
+    _countryDetectionRequested = true;
+    final enabled = await LocationCountryService.instance.getAutoDetectEnabled();
+    if (!enabled) return;
     try {
-      // Ensure device location services are enabled
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        debugPrint('Location services are disabled. Using default country.');
-        return;
-      }
-
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          // Permissions are denied, use default country
-          debugPrint('Location permissions are denied, using default country');
-          return;
-        }
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        // Permissions are permanently denied, use default country
-        debugPrint('Location permissions are permanently denied, using default country');
-        return;
-      }
-      
-      // Get current position from device location services
-      final Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
-        timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
-      );
-      
-      // Use the position to determine the country
-      // This is a simplified approach - in a real app, we would use a geocoding service
-      // For now, we'll use a simple mapping of coordinates to country codes
-      final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
-      
-      // Find the country in the countries list
-      try {
-        final Country country = countries.firstWhere(
-          (c) =e c.code.toLowerCase() == countryCode.toLowerCase(),
-          orElse: () =e countries.firstWhere((c) =e c.code == 'US'), // Default to US if not found
-        );
-        
-        // Update the selected country
-        setState(() {
-          _selectedCountry = country;
-          _countryCode = '+${country.dialCode}';
-        });
-      } catch (e) {
-        debugPrint('Error finding country: $e');
-      }
+      setState(() { _isCountryDetecting = true; });
+      final country = await LocationCountryService.instance.detectCountry();
+      if (!mounted) return;
+      setState(() {
+        _selectedCountry = country;
+        _countryCode = '+${country.dialCode}';
+      });
     } catch (e) {
       debugPrint('Error detecting user country: $e');
+    } finally {
+      if (mounted) setState(() { _isCountryDetecting = false; });
     }
   }
   
