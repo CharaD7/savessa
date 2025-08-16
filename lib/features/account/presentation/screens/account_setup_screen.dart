@@ -5,14 +5,15 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../services/validation/email_validator_service.dart';
-import '../../../auth/presentation/components/role_indicator_component.dart';
-import '../../../auth/presentation/components/login_signup_toggle_component.dart';
-import '../../../auth/presentation/components/login_form_component.dart';
-import '../../../auth/presentation/components/signup_form_component.dart';
+import 'package:savessa/services/location_country_service.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/shared/widgets/validated_text_field.dart';
+import 'package:savessa/services/validation/email_validator_service.dart';
+import 'package:savessa/features/auth/presentation/components/role_indicator_component.dart';
+import 'package:savessa/features/auth/presentation/components/login_signup_toggle_component.dart';
+import 'package:savessa/features/auth/presentation/components/login_form_component.dart';
+import 'package:savessa/features/auth/presentation/components/signup_form_component.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   final String? selectedRole;
@@ -96,6 +97,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Loading state
   bool _isLoading = false;
+
+  // Country detect state & preference
+  bool _countryDetectionRequested = false;
+  bool _isCountryDetecting = false;
+  bool _autoDetectEnabled = true;
   
   // Centralized focus handler to reduce setState calls
   void _handleFocusChange(FocusNode node, String fieldName) {
@@ -120,11 +126,16 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _selectedRole = widget.selectedRole!;
     }
     
-    // Detect user's country based on location
-    _detectUserCountry();
+    // Defer location prompt until phone field focus.
+    // Country detection will run on first phone field focus.
     
     // Delay initialization to prevent UI jank during animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Load auto-detect preference
+      () async {
+        final enabled = await LocationCountryService.instance.getAutoDetectEnabled();
+        if (mounted) setState(() { _autoDetectEnabled = enabled; });
+      }();
       if (mounted) {
         // Set system UI to be transparent for fullscreen effect
         SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -144,7 +155,12 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         _firstNameFocus.addListener(() => _handleFocusChange(_firstNameFocus, 'first_name'));
         _middleNameFocus.addListener(() => _handleFocusChange(_middleNameFocus, 'middle_name'));
         _lastNameFocus.addListener(() => _handleFocusChange(_lastNameFocus, 'last_name'));
-        _phoneFocus.addListener(() => _handleFocusChange(_phoneFocus, 'phone'));
+        _phoneFocus.addListener(() {
+          _handleFocusChange(_phoneFocus, 'phone');
+          if (_phoneFocus.hasFocus) {
+            _triggerCountryDetectionOnFocus();
+          }
+        });
         _contactFocus.addListener(() => _handleFocusChange(_contactFocus, 'contact'));
         _passwordFocus.addListener(() => _handleFocusChange(_passwordFocus, 'password'));
         _confirmPasswordFocus.addListener(() => _handleFocusChange(_confirmPasswordFocus, 'confirm_password'));
@@ -316,7 +332,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       }
       
       // Only update state once if any changes were made
-      if (stateChanged && mounted) {
+      if (stateChanged  mounted) {
         setState(() {
           // State variables were already updated above
         });
@@ -359,9 +375,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       _playFieldGuidance(_currentField);
     }
   }
-  
+
   // Method to detect user's country based on location
-  Future[24String[0m> _detectUserCountry() async {
+  // Method to detect user's country based on location
+  Futurevoid _detectUserCountry() async {
     try {
       // Ensure device location services are enabled
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -394,15 +411,15 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       );
       
       // Use the position to determine the country
-      // This is a simplified approach - in a real app, you would use a geocoding service
+      // This is a simplified approach - in a real app, we would use a geocoding service
       // For now, we'll use a simple mapping of coordinates to country codes
       final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
       
       // Find the country in the countries list
       try {
         final Country country = countries.firstWhere(
-          (c) => c.code.toLowerCase() == countryCode.toLowerCase(),
-          orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+          (c) =e c.code.toLowerCase() == countryCode.toLowerCase(),
+          orElse: () =e countries.firstWhere((c) =e c.code == 'US'), // Default to US if not found
         );
         
         // Update the selected country
@@ -416,23 +433,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
     } catch (e) {
       debugPrint('Error detecting user country: $e');
     }
-  }
-  
-  // Helper method to get country code from coordinates
-  Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
-    try {
-      final placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        final iso = placemarks.first.isoCountryCode;
-        if (iso != null && iso.isNotEmpty) {
-          return iso.toUpperCase();
-        }
-      }
-    } catch (e) {
-      debugPrint('Reverse geocoding failed: $e');
-    }
-    // Fallback
-    return 'US';
   }
   
   // Login method
@@ -785,6 +785,54 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   
                   const SizedBox(height: 16),
                   
+                  // Auto-detect Country toggle
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          IconMapping.location,
+                          color: theme.colorScheme.onPrimary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Auto-detect Country',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: _autoDetectEnabled,
+                          onChanged: (value) async {
+                            setState(() { _autoDetectEnabled = value; });
+                            await LocationCountryService.instance.setAutoDetectEnabled(value);
+                            if (value && _phoneFocus.hasFocus && !_countryDetectionRequested) {
+                              _triggerCountryDetectionOnFocus();
+                            }
+                          },
+                          activeColor: theme.colorScheme.secondary,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  
                   // Role indication
                   RoleIndicatorComponent(
                     selectedRole: _selectedRole,
@@ -879,8 +927,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       confirmPasswordFocus: _confirmPasswordFocus,
       onSignup: _signup,
       selectedCountry: _selectedCountry,
+      showPhoneDetecting: _isCountryDetecting,
       onFieldCompletion: _checkFieldCompletion,
       onCountryChanged: (country) {
+        // Persist user's explicit selection so we respect it next time
+        LocationCountryService.instance.setUserSelectedIso(country.code);
         setState(() {
           _selectedCountry = country;
           _countryCode = '+${country.dialCode}';
