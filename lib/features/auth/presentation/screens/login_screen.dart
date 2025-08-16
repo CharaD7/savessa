@@ -4,12 +4,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
 
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../services/validation/email_validator_service.dart';
-import '../../../../services/validation/password_validator_service.dart';
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/validated_text_field.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/services/validation/email_validator_service.dart';
+import 'package:savessa/services/validation/password_validator_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? selectedRole;

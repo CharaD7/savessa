@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../shared/widgets/loaders/gradient_square_loader.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/shared/widgets/loaders/gradient_square_loader.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

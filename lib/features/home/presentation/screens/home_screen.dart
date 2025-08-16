@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/app_card.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:savessa/shared/widgets/app_card.dart';
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

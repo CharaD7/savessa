@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});

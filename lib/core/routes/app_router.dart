@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // Import screens
-import '../../features/splash/presentation/screens/splash_screen.dart';
-import '../../features/language/presentation/screens/language_selection_screen.dart';
-import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
-import '../../features/role/presentation/screens/role_selection_screen.dart';
-import '../../features/account/presentation/screens/account_setup_screen.dart';
-import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/settings/presentation/screens/settings_screen.dart';
-import '../constants/icon_mapping.dart';
-import '../theme/theme_demo.dart';
+import 'package:savessa/features/splash/presentation/screens/splash_screen.dart';
+import 'package:savessa/features/language/presentation/screens/language_selection_screen.dart';
+import 'package:savessa/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:savessa/features/role/presentation/screens/role_selection_screen.dart';
+import 'package:savessa/features/account/presentation/screens/account_setup_screen.dart';
+import 'package:savessa/features/auth/presentation/screens/login_screen.dart';
+import 'package:savessa/features/auth/presentation/screens/register_screen.dart';
+import 'package:savessa/features/home/presentation/screens/home_screen.dart';
+import 'package:savessa/features/settings/presentation/screens/settings_screen.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/theme_demo.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
 

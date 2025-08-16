@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});

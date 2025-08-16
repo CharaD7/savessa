@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../core/constants/icon_mapping.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
 
 class AppTextField extends StatefulWidget {
   final String label;

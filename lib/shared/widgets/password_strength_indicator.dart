@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/validation/password_validator_service.dart';
+import 'package:savessa/services/validation/password_validator_service.dart';
 
 class PasswordStrengthIndicator extends StatelessWidget {
   final String password;

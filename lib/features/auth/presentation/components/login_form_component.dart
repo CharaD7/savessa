@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../services/validation/email_validator_service.dart';
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/validated_text_field.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/services/validation/email_validator_service.dart';
 
 /// A reusable component that displays a login form with email and password fields,
 /// a forgot password link, and a login button.

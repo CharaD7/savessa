@@ -1,5 +1,5 @@
 import 'package:postgres/postgres.dart';
-import '../../core/config/env_config.dart';
+import 'package:savessa/core/config/env_config.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();

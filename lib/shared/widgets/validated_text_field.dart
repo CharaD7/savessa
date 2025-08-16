@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 import 'package:async/async.dart';
-import '../../core/constants/icon_mapping.dart';
-import '../../core/theme/app_theme.dart';
-import 'loaders/gradient_square_loader.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
+import 'package:savessa/shared/widgets/loaders/gradient_square_loader.dart';
 
 enum ValidationStatus {
   none,

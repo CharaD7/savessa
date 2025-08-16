@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../core/config/env_config.dart';
+import 'package:savessa/core/config/env_config.dart';
 
 class EmailValidatorService {
   static final EmailValidatorService _instance = EmailValidatorService._internal();

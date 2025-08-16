@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../shared/widgets/app_button.dart';
-import '../../../../../shared/widgets/app_card.dart';
-import '../../../../../core/constants/icon_mapping.dart';
-import '../../../../../core/theme/theme_toggle.dart';
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/app_card.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/theme_toggle.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

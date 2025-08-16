@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/icon_mapping.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
 
 /// A reusable component that displays the selected role (Savings Manager or Savings Contributor)
 /// with an icon and text.
