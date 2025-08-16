@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:savessa/services/location_country_service.dart';
 import 'package:savessa/shared/widgets/world_flag_overlay.dart';
 
@@ -18,6 +17,8 @@ import 'package:savessa/services/validation/password_validator_service.dart';
 import 'package:savessa/services/validation/phone_validator_service.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
+import 'package:feather_icons/feather_icons.dart';
+import 'package:savessa/shared/widgets/app_logo.dart';
 
 class RegisterScreen extends StatefulWidget {
   // Optional override for detection in tests
@@ -57,6 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   ValidationStatus _confirmEmailValidationStatus = ValidationStatus.none;
   ValidationStatus _passwordValidationStatus = ValidationStatus.none;
   ValidationStatus _confirmPasswordValidationStatus = ValidationStatus.none;
+  // ignore: unused_field
   ValidationStatus _phoneValidationStatus = ValidationStatus.none;
   
   // Focus nodes to control field focus
@@ -445,49 +447,25 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // App logo with drop shadow
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.gold.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      'S',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondary,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
+                // App logo with glow
+                const AppLogo(size: 100, glow: true, assetPath: 'assets/images/logo.png'),
                 const SizedBox(height: 24),
                 
                 // Header with glassmorphism effect
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                     ],
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -507,7 +485,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             ? 'Setting up as Savings Manager' 
                             : 'Setting up as Savings Contributor',
                         style: TextStyle(
-                          color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
@@ -522,11 +500,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         spreadRadius: 0,
                       ),
@@ -563,12 +541,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 // Voice guidance toggle with improved styling
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         spreadRadius: 0,
                       ),
@@ -608,11 +586,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         spreadRadius: 0,
                       ),
@@ -622,7 +600,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        IconMapping.location,
+FeatherIcons.mapPin,
                         color: theme.colorScheme.onPrimary,
                         size: 20,
                       ),
@@ -656,17 +634,17 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                     ],
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -830,7 +808,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                               child: Text(
                                 'auth.phone'.tr(),
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.normal,
                                   fontSize: 14,
                                 ),
@@ -845,10 +823,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   decoration: InputDecoration(
                                 hintText: 'Enter phone number',
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                                 filled: true,
-                                fillColor: Colors.white.withOpacity(0.1),
+                                fillColor: Colors.white.withValues(alpha: 0.1),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,
@@ -859,7 +837,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -945,10 +923,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),

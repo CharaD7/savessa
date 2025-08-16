@@ -7,11 +7,11 @@ import 'package:savessa/services/location_country_service.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/shared/widgets/validated_text_field.dart';
-import 'package:savessa/services/validation/email_validator_service.dart';
 import 'package:savessa/features/auth/presentation/components/role_indicator_component.dart';
 import 'package:savessa/features/auth/presentation/components/login_signup_toggle_component.dart';
 import 'package:savessa/features/auth/presentation/components/login_form_component.dart';
 import 'package:savessa/features/auth/presentation/components/signup_form_component.dart';
+import 'package:savessa/shared/widgets/app_logo.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   final String? selectedRole;
@@ -63,7 +63,9 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   final _confirmPasswordFocus = FocusNode();
   
   // Phone field variables
+  // ignore: unused_field
   String _countryCode = '+1'; // Default country code (US)
+  // ignore: unused_field
   final String _completePhoneNumber = ''; // Complete phone number with country code
   Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
   
@@ -301,7 +303,6 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
           break;
         case 'contact':
           // Validation for email - use simple format check for performance
-          final emailValidator = EmailValidatorService();
           isCompleted = value.trim().isNotEmpty && value.contains('@') && value.contains('.');
           if (isCompleted != _contactCompleted) {
             _contactCompleted = isCompleted;
@@ -619,49 +620,25 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // App logo with drop shadow
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.gold.withOpacity(0.5),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        'S',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSecondary,
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // App logo with glow
+                  const AppLogo(size: 100, glow: true, assetPath: 'assets/images/logo.png'),
                   const SizedBox(height: 24),
                   
                   // Header with glassmorphism effect
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           spreadRadius: 1,
                         ),
                       ],
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -681,7 +658,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                               ? 'Sign in to continue to Savessa' 
                               : 'Let\'s set up your Savessa account',
                           style: TextStyle(
-                            color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                             fontSize: 16,
                           ),
                           textAlign: TextAlign.center,
@@ -705,11 +682,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           spreadRadius: 0,
                         ),
@@ -749,11 +726,11 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           spreadRadius: 0,
                         ),
@@ -763,7 +740,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          IconMapping.location,
+FeatherIcons.mapPin,
                           color: theme.colorScheme.onPrimary,
                           size: 20,
                         ),
@@ -796,7 +773,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   // Role indication
                   RoleIndicatorComponent(
                     selectedRole: _selectedRole,
-                    prefix: 'Setting up as:',
+                    prefix: _isLoginMode ? 'Logging in as:' : 'Setting up as:',
                   ),
                   
                   const SizedBox(height: 16),
@@ -805,17 +782,17 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           spreadRadius: 1,
                         ),
                       ],
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),

@@ -160,7 +160,7 @@ class LocationCountryService {
       }
 
       final Position position = await Geolocator
-          .getCurrentPosition(desiredAccuracy: _accuracy)
+          .getCurrentPosition(locationSettings: const LocationSettings(accuracy: _accuracy))
           .timeout(_positionTimeout);
 
       final placemarks = await geocoding.placemarkFromCoordinates(
