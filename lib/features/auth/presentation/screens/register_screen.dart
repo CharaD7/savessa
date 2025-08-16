@@ -88,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   // Use a shared service to detect the current country without hardcoding
-  Futurecvoide _detectUserCountry() async {
+  Future<void> _detectUserCountry() async {
     try {
       setState(() { _isCountryDetecting = true; });
       final country = await (widget.detectCountryFn != null
