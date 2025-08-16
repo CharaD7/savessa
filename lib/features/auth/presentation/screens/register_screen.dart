@@ -5,24 +5,29 @@ import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:savessa/services/location_country_service.dart';
+import 'package:savessa/shared/widgets/world_flag_overlay.dart';
 
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_text_field.dart';
-import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../services/database/database_service.dart';
-import '../../../../services/validation/email_validator_service.dart';
-import '../../../../services/validation/password_validator_service.dart';
-import '../../../../services/validation/phone_validator_service.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/app_text_field.dart';
+import 'package:savessa/shared/widgets/validated_text_field.dart';
+import 'package:savessa/shared/widgets/password_strength_indicator.dart';
+import 'package:savessa/services/database/database_service.dart';
+import 'package:savessa/services/validation/email_validator_service.dart';
+import 'package:savessa/services/validation/password_validator_service.dart';
+import 'package:savessa/services/validation/phone_validator_service.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
+  // Optional override for detection in tests
+  final Future<Country> Function()? detectCountryFn;
   final String? selectedRole;
   
   const RegisterScreen({
     super.key, 
     this.selectedRole,
+    this.detectCountryFn,
   });
 
   @override
@@ -69,111 +74,37 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   String _currentField = '';
   late AnimationController _animationController;
   
-  // Method to get the current location and set the country
-  Future<void> _detectUserCountry() async {
+  bool _countryDetectionRequested = false;
+  bool _isCountryDetecting = false;
+  bool _autoDetectEnabled = true;
+
+  void _triggerCountryDetectionOnFocus() async {
+    if (_countryDetectionRequested) return;
+    _countryDetectionRequested = true;
+    // Respect the auto-detect preference
+    final enabled = await LocationCountryService.instance.getAutoDetectEnabled();
+    if (!enabled) return;
+    _detectUserCountry();
+  }
+
+  // Use a shared service to detect the current country without hardcoding
+  Futurecvoide _detectUserCountry() async {
     try {
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          // Permissions are denied, use default country
-          debugPrint('Location permissions are denied, using default country');
-          return;
-        }
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        // Permissions are permanently denied, use default country
-        debugPrint('Location permissions are permanently denied, using default country');
-        return;
-      }
-      
-      // Get current position
-      final Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
-        timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
-      );
-      
-      // Use the position to determine the country
-      // This is a simplified approach - in a real app, you would use a geocoding service
-      // For now, we'll use a simple mapping of coordinates to country codes
-      final String countryCode = await _getCountryFromCoordinates(position.latitude, position.longitude);
-      
-      // Find the country in the countries list
-      try {
-        final Country country = countries.firstWhere(
-          (c) => c.code.toLowerCase() == countryCode.toLowerCase(),
-          orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
-        );
-        
-        // Update the selected country
-        setState(() {
-          _selectedCountry = country;
-          _countryCode = '+${country.dialCode}';
-        });
-        
-        debugPrint('Detected country: ${country.name} (${country.code})');
-      } catch (e) {
-        debugPrint('Error finding country: $e');
-      }
+      setState(() { _isCountryDetecting = true; });
+      final country = await (widget.detectCountryFn != null
+          ? widget.detectCountryFn!()
+          : LocationCountryService.instance.detectCountry());
+      if (!mounted) return;
+      setState(() {
+        _selectedCountry = country;
+        _countryCode = '+${country.dialCode}';
+      });
+      debugPrint('Detected country: ${country.name} (${country.code})');
     } catch (e) {
       debugPrint('Error detecting user country: $e');
+    } finally {
+      if (mounted) setState(() { _isCountryDetecting = false; });
     }
-  }
-  
-  // Method to get country code from coordinates
-  // This is a simplified approach - in a real app, you would use a geocoding service
-  Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
-    // For demonstration purposes, we'll use a very simplified approach
-    // In a real app, you would use a geocoding service like Google Maps Geocoding API
-    
-    // North America (roughly)
-    if (latitude > 15 && latitude < 70 && longitude > -170 && longitude < -50) {
-      if (latitude > 25 && latitude < 50 && longitude > -125 && longitude < -65) {
-        return 'US'; // United States
-      } else if (latitude > 45 && latitude < 70 && longitude > -140 && longitude < -50) {
-        return 'CA'; // Canada
-      } else if (latitude > 15 && latitude < 32 && longitude > -120 && longitude < -85) {
-        return 'MX'; // Mexico
-      }
-    }
-    
-    // Europe (roughly)
-    if (latitude > 35 && latitude < 70 && longitude > -10 && longitude < 40) {
-      if (latitude > 48 && latitude < 55 && longitude > -10 && longitude < 2) {
-        return 'GB'; // United Kingdom
-      } else if (latitude > 42 && latitude < 51 && longitude > -5 && longitude < 10) {
-        return 'FR'; // France
-      } else if (latitude > 47 && latitude < 55 && longitude > 5 && longitude < 15) {
-        return 'DE'; // Germany
-      }
-    }
-    
-    // Africa (roughly)
-    if (latitude > -35 && latitude < 35 && longitude > -20 && longitude < 50) {
-      if (latitude > 4 && latitude < 12 && longitude > -5 && longitude < 4) {
-        return 'GH'; // Ghana
-      } else if (latitude > 25 && latitude < 32 && longitude > 25 && longitude < 35) {
-        return 'EG'; // Egypt
-      } else if (latitude > -35 && latitude < -22 && longitude > 15 && longitude < 35) {
-        return 'ZA'; // South Africa
-      }
-    }
-    
-    // Asia (roughly)
-    if (latitude > 0 && latitude < 70 && longitude > 60 && longitude < 180) {
-      if (latitude > 20 && latitude < 40 && longitude > 70 && longitude < 135) {
-        return 'CN'; // China
-      } else if (latitude > 20 && latitude < 45 && longitude > 125 && longitude < 150) {
-        return 'JP'; // Japan
-      } else if (latitude > 5 && latitude < 20 && longitude > 95 && longitude < 105) {
-        return 'TH'; // Thailand
-      }
-    }
-    
-    // Default to US if we can't determine the country
-    return 'US';
   }
 
   @override
@@ -197,9 +128,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       _selectedRole = widget.selectedRole!;
     }
     
-    // Detect user's country
-    _detectUserCountry();
+    // Do not prompt for location until the user focuses the phone field
+    // Country detection will run on first phone field focus.
     
+    // Load auto-detect preference
+    () async {
+      final enabled = await LocationCountryService.instance.getAutoDetectEnabled();
+      if (mounted) setState(() { _autoDetectEnabled = enabled; });
+    }();
+
     // Add listeners to focus nodes
     _firstNameFocusNode.addListener(() {
       if (_firstNameFocusNode.hasFocus) {
@@ -261,6 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         setState(() {
           _currentField = 'phone';
         });
+        // Trigger country detection on first focus
+        _triggerCountryDetectionOnFocus();
         if (_voiceGuidanceEnabled) {
           _playFieldGuidance('phone');
         }
@@ -663,6 +602,54 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   ),
                 ),
                   
+                const SizedBox(height: 16),
+                
+                // Auto-detect Country toggle
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        IconMapping.location,
+                        color: theme.colorScheme.onPrimary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Auto-detect Country',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: _autoDetectEnabled,
+                        onChanged: (value) async {
+                          setState(() { _autoDetectEnabled = value; });
+                          await LocationCountryService.instance.setAutoDetectEnabled(value);
+                          if (value && _phoneFocusNode.hasFocus && !_countryDetectionRequested) {
+                            _triggerCountryDetectionOnFocus();
+                          }
+                        },
+                        activeColor: theme.colorScheme.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 32),
                 
                 // Form with glassmorphism container
@@ -849,10 +836,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 ),
                               ),
                             ),
-                            IntlPhoneField(
-                              controller: _phoneController,
-                              focusNode: _phoneFocusNode,
-                              decoration: InputDecoration(
+                            Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                IntlPhoneField(
+                                  controller: _phoneController,
+                                  focusNode: _phoneFocusNode,
+                                  decoration: InputDecoration(
                                 hintText: 'Enter phone number',
                                 hintStyle: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
@@ -879,8 +869,21 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: Colors.red, width: 2),
                                 ),
-                              ),
-                              initialCountryCode: _selectedCountry.code,
+                                suffixIcon: _isCountryDetecting
+                                    ? Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.secondary),
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                ),
+                                initialCountryCode: _selectedCountry.code,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
@@ -929,6 +932,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 
                                 return errorMessage;
                               },
+                                ),
+                                if (_isCountryDetecting)
+                                  const WorldFlagOverlay(visible: true),
+                              ],
                             ),
                           ],
                         ),
