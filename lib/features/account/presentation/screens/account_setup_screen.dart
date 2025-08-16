@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/icon_mapping.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../services/validation/password_validator_service.dart';
 import '../../../../services/validation/email_validator_service.dart';
-import '../../../../services/validation/phone_validator_service.dart';
 import '../../../auth/presentation/components/role_indicator_component.dart';
 import '../../../auth/presentation/components/login_signup_toggle_component.dart';
 import '../../../auth/presentation/components/login_form_component.dart';
@@ -70,7 +65,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Phone field variables
   String _countryCode = '+1'; // Default country code (US)
-  String _completePhoneNumber = ''; // Complete phone number with country code
+  final String _completePhoneNumber = ''; // Complete phone number with country code
   Country _selectedCountry = countries.firstWhere((country) => country.code == 'US'); // Default country
   
   // Track which fields are completed
@@ -83,7 +78,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   bool _confirmPasswordCompleted = false;
   
   // Validation status tracking for phone
-  ValidationStatus _phoneValidationStatus = ValidationStatus.none;
+  final ValidationStatus _phoneValidationStatus = ValidationStatus.none;
   
   // Validation status tracking
   ValidationStatus _emailValidationStatus = ValidationStatus.none;
@@ -418,9 +413,18 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   
   // Helper method to get country code from coordinates
   Future<String> _getCountryFromCoordinates(double latitude, double longitude) async {
-    // In a real app, you would use a geocoding service like Google Maps Geocoding API
-    // For now, we'll return a default country code
-    // This is a placeholder implementation
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        final iso = placemarks.first.isoCountryCode;
+        if (iso != null && iso.isNotEmpty) {
+          return iso.toUpperCase();
+        }
+      }
+    } catch (e) {
+      debugPrint('Reverse geocoding failed: $e');
+    }
+    // Fallback
     return 'US';
   }
   

@@ -328,6 +328,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             children: [
               // Removed explicit 'Phone Number' label per requirements
               IntlPhoneField(
+                key: ValueKey(widget.selectedCountry.code),
                 controller: widget.phoneController,
                 focusNode: widget.phoneFocus,
                 decoration: InputDecoration(
