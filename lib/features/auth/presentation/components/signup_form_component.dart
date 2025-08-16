@@ -3,15 +3,15 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_text_field.dart';
-import '../../../../shared/widgets/validated_text_field.dart';
-import '../../../../shared/widgets/password_strength_indicator.dart';
-import '../../../../core/constants/icon_mapping.dart';
-import '../../../../services/validation/email_validator_service.dart';
-import '../../../../services/validation/password_validator_service.dart';
-import '../../../../services/validation/phone_validator_service.dart';
-
+import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/app_text_field.dart';
+import 'package:savessa/shared/widgets/validated_text_field.dart';
+import 'package:savessa/shared/widgets/password_strength_indicator.dart';
+import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/services/validation/email_validator_service.dart';
+import 'package:savessa/services/validation/password_validator_service.dart';
+import 'package:savessa/services/validation/phone_validator_service.dart';
+import 'package:savessa/shared/widgets/world_flag_overlay.dart';
 /// A reusable component that displays a signup form with fields for first name,
 /// middle name, last name, email, phone number, password, and confirm password,
 /// along with a signup button.
@@ -117,6 +117,9 @@ class SignUpFormComponent extends StatefulWidget {
   
   /// Optional custom border radius for the signup button.
   final double? signupButtonBorderRadius;
+
+  /// Whether to show a tiny loading indicator within the phone field suffix.
+  final bool showPhoneDetecting;
   
   const SignUpFormComponent({
     super.key,
@@ -154,13 +157,14 @@ class SignUpFormComponent extends StatefulWidget {
     this.signupButtonLabel,
     this.signupButtonHeight,
     this.signupButtonBorderRadius,
+    this.showPhoneDetecting = false,
   });
 
   @override
   State<SignUpFormComponent> createState() => _SignUpFormComponentState();
 }
 
-class _SignUpFormComponentState extends State[24SignUpFormComponent[0m> {
+class _SignUpFormComponentState extends State<SignUpFormComponent> {
   // Local variables to track state
   String _countryCode = '';
   String _completePhoneNumber = '';
@@ -233,39 +237,40 @@ class _SignUpFormComponentState extends State[24SignUpFormComponent[0m> {
 
     return Container(
       decoration: const BoxDecoration(),
-      child: TweenAnimationBuilder<Color?>(
+child: TweenAnimationBuilderColor?e(
         tween: ColorTween(begin: Colors.red, end: targetColor),
         duration: const Duration(milliseconds: 200),
         builder: (context, color, _) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(12),
-                bottomRight: Radius.circular(12),
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$_phoneDigits / $rangeLabel',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$_phoneDigits / $rangeLabel',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(width: 6),
+              if (statusIcon != null)
+                Icon(
+                  statusIcon,
+                  size: 16,
+                  color: statusColor,
+                ),
+              if (widget.showPhoneDetecting) ...[
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimationColor(Colors.white70),
                   ),
                 ),
-                const SizedBox(width: 6),
-                if (statusIcon != null)
-                  Icon(
-                    statusIcon,
-                    size: 16,
-                    color: statusColor,
-                  ),
               ],
-            ),
+            ],
           );
         },
       ),
@@ -405,117 +410,132 @@ class _SignUpFormComponentState extends State[24SignUpFormComponent[0m> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Removed explicit 'Phone Number' label per requirements
-              IntlPhoneField(
-                key: ValueKey(widget.selectedCountry.code),
-                controller: widget.phoneController,
-                focusNode: widget.phoneFocus,
-                decoration: InputDecoration(
-                  hintText: widget.phoneFocus.hasFocus ? 'Enter phone number' : 'Phone number',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                  // Hide any default counter from TextField
-                  counterText: '',
-                  // Removed prefixIcon to avoid duplicate phone icons
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                  ),
-                  errorStyle: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  // Custom inline count indicator and status icon inside the input field
-                  suffix: _buildPhoneSuffix(context),
-                ),
-                initialCountryCode: widget.selectedCountry.code,
-                countries: countries,
-                showDropdownIcon: true,
-                dropdownIconPosition: IconPosition.trailing,
-                flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
-                disableLengthCheck: false,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-                dropdownTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-                dropdownIcon: const Icon(
-                  IconMapping.arrowDownward,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                validator: (phone) {
-                  if (phone == null || phone.number.isEmpty) {
-                    return 'errors.required_field'.tr();
-                  }
-                  
-                  final errorMessage = PhoneValidatorService.validateIntlPhone(phone, widget.selectedCountry);
-                  
-                  if (errorMessage != null) {
-                    return errorMessage;
-                  }
-                  
-                  return null;
-                },
-                onChanged: (phone) {
-                  setState(() {
-                    _countryCode = phone.countryCode;
-                    _completePhoneNumber = phone.completeNumber;
-                    _phoneDigits = phone.number.length;
-                    // Update local phone status
-                    final error = PhoneValidatorService.validateIntlPhone(phone, widget.selectedCountry);
-                    if (phone.number.isEmpty) {
-                      _phoneLocalStatus = ValidationStatus.none;
-                    } else if (error == null) {
-                      _phoneLocalStatus = ValidationStatus.valid;
-                    } else {
-                      final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
-                      if (_phoneDigits [24String[0m< minLen) {
-                        _phoneLocalStatus = ValidationStatus.validating; // show exclamation while typing
-                      } else {
-                        _phoneLocalStatus = ValidationStatus.invalid;
+              Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  IntlPhoneField(
+                    key: ValueKey(widget.selectedCountry.code),
+                    controller: widget.phoneController,
+                    focusNode: widget.phoneFocus,
+                    decoration: InputDecoration(
+                      hintText: widget.phoneFocus.hasFocus ? 'Enter phone number' : 'Phone number',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      // Hide any default counter from TextField
+                      counterText: '',
+                      // Removed prefixIcon to avoid duplicate phone icons
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      errorStyle: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      // Custom inline count indicator and status icon inside the input field
+                      suffix: _buildPhoneSuffix(context),
+                    ),
+                    initialCountryCode: widget.selectedCountry.code,
+                    countries: countries,
+                    showDropdownIcon: true,
+                    dropdownIconPosition: IconPosition.trailing,
+                    flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    disableLengthCheck: false,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    dropdownTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    dropdownIcon: const Icon(
+                      IconMapping.arrowDownward,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    validator: (phone) {
+                      if (phone == null || phone.number.isEmpty) {
+                        return 'errors.required_field'.tr();
                       }
-                    }
-                  });
-                  
-                  if (widget.onFieldCompletion != null) {
-                    widget.onFieldCompletion!('phone', phone.completeNumber);
-                  }
-                },
-                onCountryChanged: (country) {
-                  setState(() {
-                    _countryCode = '+${country.dialCode}';
-                    _phoneDigits = widget.phoneController.text.replaceAll(RegExp(r'\\D'), '').length;
-                    _phoneLocalStatus = ValidationStatus.none;
-                  });
-                  
-                  if (widget.onCountryChanged != null) {
-                           },
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(widget.passwordFocus);
-                },
+                      
+                      final errorMessage = PhoneValidatorService.validateIntlPhone(phone, widget.selectedCountry);
+                      
+                      if (errorMessage != null) {
+                        return errorMessage;
+                      }
+                      
+                      return null;
+                    },
+                    onChanged: (phone) {
+                      setState(() {
+                        _countryCode = phone.countryCode;
+                        _completePhoneNumber = phone.completeNumber;
+                        _phoneDigits = phone.number.length;
+                        // Update local phone status
+                        final error = PhoneValidatorService.validateIntlPhone(phone, widget.selectedCountry);
+                        if (phone.number.isEmpty) {
+                          _phoneLocalStatus = ValidationStatus.none;
+                        } else if (error == null) {
+                          _phoneLocalStatus = ValidationStatus.valid;
+                        } else {
+                          final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
+                          if (_phoneDigits < minLen) {
+                            _phoneLocalStatus = ValidationStatus.validating; // show exclamation while typing
+                          } else {
+                            _phoneLocalStatus = ValidationStatus.invalid;
+                          }
+                        }
+                      });
+                      
+                      if (widget.onFieldCompletion != null) {
+                        widget.onFieldCompletion!('phone', phone.completeNumber);
+                      }
+                    },
+                    onCountryChanged: (country) {
+                      setState(() {
+                        _countryCode = '+${country.dialCode}';
+                        _phoneDigits = widget.phoneController.text.replaceAll(RegExp(r'\D'), '').length;
+                        _phoneLocalStatus = ValidationStatus.none;
+                      });
+                      if (widget.onCountryChanged != null) {
+                        widget.onCountryChanged!(country);
+                      }
+                    },
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(widget.passwordFocus);
+                    },
+                  ),
+                  if (widget.showPhoneDetecting)
+                    const Positioned(
+                      left: 10,
+                      child: Icon(
+                        Icons.public,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                    ),
+                ],
               ),
               if (widget.phoneValidationStatus == ValidationStatus.valid)
                 const Padding(
