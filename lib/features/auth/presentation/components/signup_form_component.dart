@@ -160,11 +160,12 @@ class SignUpFormComponent extends StatefulWidget {
   State<SignUpFormComponent> createState() => _SignUpFormComponentState();
 }
 
-class _SignUpFormComponentState extends State<SignUpFormComponent> {
+class _SignUpFormComponentState extends State[24SignUpFormComponent[0m> {
   // Local variables to track state
   String _countryCode = '';
   String _completePhoneNumber = '';
   int _phoneDigits = 0;
+  ValidationStatus _phoneLocalStatus = ValidationStatus.none;
   
   @override
   void initState() {
@@ -194,6 +195,83 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
     super.dispose();
   }
   
+  Widget _buildPhoneSuffix(BuildContext context) {
+    final validLengths = PhoneValidatorService.getExpectedLength(widget.selectedCountry.code);
+    final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
+    final maxLen = PhoneValidatorService.getMaxExpectedLength(widget.selectedCountry.code);
+    final isAcceptable = validLengths.contains(_phoneDigits);
+
+    Color targetColor;
+    IconData? statusIcon;
+    Color statusColor = Colors.transparent;
+
+    switch (_phoneLocalStatus) {
+      case ValidationStatus.valid:
+        targetColor = Colors.green;
+        statusIcon = IconMapping.checkCircle;
+        statusColor = Colors.green;
+        break;
+      case ValidationStatus.invalid:
+        targetColor = Colors.red;
+        statusIcon = IconMapping.xCircle;
+        statusColor = Colors.red;
+        break;
+      case ValidationStatus.validating:
+        targetColor = Colors.orange;
+        statusIcon = IconMapping.infoOutline;
+        statusColor = Colors.orange;
+        break;
+      case ValidationStatus.none:
+      default:
+        targetColor = isAcceptable ? Colors.green : Colors.red;
+        statusIcon = null;
+        statusColor = Colors.transparent;
+        break;
+    }
+
+    final rangeLabel = minLen == maxLen ? '$maxLen' : '$minLen-$maxLen';
+
+    return Container(
+      decoration: const BoxDecoration(),
+      child: TweenAnimationBuilder<Color?>(
+        tween: ColorTween(begin: Colors.red, end: targetColor),
+        duration: const Duration(milliseconds: 200),
+        builder: (context, color, _) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$_phoneDigits / $rangeLabel',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                if (statusIcon != null)
+                  Icon(
+                    statusIcon,
+                    size: 16,
+                    color: statusColor,
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -336,6 +414,8 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                   ),
+                  // Hide any default counter from TextField
+                  counterText: '',
                   // Removed prefixIcon to avoid duplicate phone icons
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -363,6 +443,8 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
                   ),
+                  // Custom inline count indicator and status icon inside the input field
+                  suffix: _buildPhoneSuffix(context),
                 ),
                 initialCountryCode: widget.selectedCountry.code,
                 countries: countries,
@@ -401,6 +483,20 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                     _countryCode = phone.countryCode;
                     _completePhoneNumber = phone.completeNumber;
                     _phoneDigits = phone.number.length;
+                    // Update local phone status
+                    final error = PhoneValidatorService.validateIntlPhone(phone, widget.selectedCountry);
+                    if (phone.number.isEmpty) {
+                      _phoneLocalStatus = ValidationStatus.none;
+                    } else if (error == null) {
+                      _phoneLocalStatus = ValidationStatus.valid;
+                    } else {
+                      final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
+                      if (_phoneDigits [24String[0m< minLen) {
+                        _phoneLocalStatus = ValidationStatus.validating; // show exclamation while typing
+                      } else {
+                        _phoneLocalStatus = ValidationStatus.invalid;
+                      }
+                    }
                   });
                   
                   if (widget.onFieldCompletion != null) {
@@ -410,53 +506,15 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                 onCountryChanged: (country) {
                   setState(() {
                     _countryCode = '+${country.dialCode}';
-                    _phoneDigits = widget.phoneController.text.replaceAll(RegExp(r'\D'), '').length;
+                    _phoneDigits = widget.phoneController.text.replaceAll(RegExp(r'\\D'), '').length;
+                    _phoneLocalStatus = ValidationStatus.none;
                   });
                   
                   if (widget.onCountryChanged != null) {
-                    widget.onCountryChanged!(country);
-                  }
-                },
+                           },
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) {
                   FocusScope.of(context).requestFocus(widget.passwordFocus);
-                },
-              ),
-              // Custom animated count indicator
-              Builder(
-                builder: (context) {
-                  final validLengths = PhoneValidatorService.getExpectedLength(widget.selectedCountry.code);
-                  final minLen = PhoneValidatorService.getMinExpectedLength(widget.selectedCountry.code);
-                  final maxLen = PhoneValidatorService.getMaxExpectedLength(widget.selectedCountry.code);
-                  final isAcceptable = validLengths.contains(_phoneDigits);
-                  final targetColor = isAcceptable
-                      ? Color.lerp(Colors.red, Colors.green, ((maxLen - minLen) == 0)
-                          ? (_phoneDigits >= minLen ? 1.0 : 0.0)
-                          : ((_phoneDigits - minLen).clamp(0, maxLen - minLen) / (maxLen - minLen)))!
-                      : Colors.red;
-                  final rangeLabel = minLen == maxLen ? '$maxLen' : '$minLen-$maxLen';
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: TweenAnimationBuilder<Color?>(
-                      tween: ColorTween(begin: Colors.red, end: targetColor),
-                      duration: const Duration(milliseconds: 200),
-                      builder: (context, color, _) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              '$_phoneDigits / $rangeLabel',
-                              style: TextStyle(
-                                color: color,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  );
                 },
               ),
               if (widget.phoneValidationStatus == ValidationStatus.valid)

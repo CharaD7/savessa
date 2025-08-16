@@ -361,8 +361,15 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   }
   
   // Method to detect user's country based on location
-  Future<void> _detectUserCountry() async {
+  Future[24String[0m> _detectUserCountry() async {
     try {
+      // Ensure device location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled. Using default country.');
+        return;
+      }
+
       // Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -380,7 +387,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
         return;
       }
       
-      // Get current position
+      // Get current position from device location services
       final Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.low, // Low accuracy is sufficient for country detection
         timeLimit: const Duration(seconds: 5), // Timeout after 5 seconds
