@@ -142,11 +142,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   // Voice toggle with glassmorphism effect
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           spreadRadius: 0,
                         ),
@@ -164,12 +164,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   
                   // Skip button with glassmorphism effect
                   Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           spreadRadius: 0,
                         ),
@@ -224,7 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 width: size.width * 0.7,
                                 height: size.width * 0.7,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
                                     color: theme.colorScheme.secondary,
@@ -232,7 +232,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.gold.withOpacity(0.3),
+                                      color: AppTheme.gold.withValues(alpha: 0.3),
                                       blurRadius: 20,
                                       spreadRadius: 2,
                                     ),
@@ -251,17 +251,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 spreadRadius: 0,
                               ),
                             ],
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),
@@ -280,25 +280,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         // Description with glassmorphism effect
                         Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 spreadRadius: 0,
                               ),
                             ],
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),
                           child: Text(
                             step['description']!,
                             style: TextStyle(
-                              color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                               fontSize: 16,
                             ),
                             textAlign: TextAlign.center,
@@ -327,7 +327,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           _onboardingSteps.length,
                           (index) {
                             final isActive = _currentPage == index;
-                            final position = isActive ? 0.0 : (index < _currentPage ? -1.0 : 1.0);
                             
                             return Container(
                               width: isActive ? 24 : 12,
@@ -337,11 +336,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 borderRadius: BorderRadius.circular(6),
                                 color: isActive
                                     ? theme.colorScheme.secondary
-                                    : theme.colorScheme.onPrimary.withOpacity(0.3),
+                                    : theme.colorScheme.onPrimary.withValues(alpha: 0.3),
                                 boxShadow: isActive
                                     ? [
                                         BoxShadow(
-                                          color: AppTheme.gold.withOpacity(0.3),
+                                          color: AppTheme.gold.withValues(alpha: 0.3),
                                           blurRadius: 4,
                                           spreadRadius: 1,
                                         ),
@@ -367,7 +366,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 8,
                                     spreadRadius: 1,
                                   ),
@@ -392,7 +391,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.gold.withOpacity(0.3),
+                              color: AppTheme.gold.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 1,
                             ),

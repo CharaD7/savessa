@@ -50,7 +50,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.white.withOpacity(0.3),
+                  backgroundColor: Colors.white.withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
                   minHeight: 8,
                 ),
@@ -89,7 +89,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
         Text(
           'Password must:',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 12,
           ),
         ),
@@ -130,7 +130,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
         Text(
           text,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 12,
           ),
         ),

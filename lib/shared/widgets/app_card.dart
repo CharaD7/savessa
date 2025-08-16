@@ -81,7 +81,7 @@ class AppCard extends StatelessWidget {
         boxShadow: hasShadow
             ? [
                 BoxShadow(
-                  color: cardShadowColor.withOpacity(0.1),
+                  color: cardShadowColor.withValues(alpha: 0.1),
                   blurRadius: elevation * 2,
                   spreadRadius: elevation / 2,
                   offset: Offset(0, elevation / 2),
@@ -264,7 +264,7 @@ class AppGradientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: cardShadowColor.withOpacity(0.1),
+            color: cardShadowColor.withValues(alpha: 0.1),
             blurRadius: elevation * 2,
             spreadRadius: elevation / 2,
             offset: Offset(0, elevation / 2),

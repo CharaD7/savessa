@@ -10,6 +10,7 @@ import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/services/validation/email_validator_service.dart';
 import 'package:savessa/services/validation/password_validator_service.dart';
+import 'package:savessa/shared/widgets/app_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? selectedRole;
@@ -171,49 +172,26 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // App logo with drop shadow
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.gold.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      'S',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondary,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
+                // App logo with glow
+                const SizedBox(height: 4),
+                const AppLogo(size: 100, glow: true, assetPath: 'assets/images/logo.png'),
                 const SizedBox(height: 24),
                 
                 // Header with glassmorphism effect
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                     ],
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -233,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             ? 'Logging in as Savings Manager'
                             : 'Logging in as Savings Contributor',
                         style: TextStyle(
-                          color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
@@ -247,12 +225,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 // Login/Register toggle - Link to register
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         spreadRadius: 0,
                       ),
@@ -289,12 +267,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 // Voice guidance toggle with improved styling
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         spreadRadius: 0,
                       ),
@@ -333,11 +311,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 // Role indication
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -370,18 +348,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 // Form with glassmorphism container
                 Container(
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                     ],
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),

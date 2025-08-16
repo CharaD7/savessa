@@ -26,7 +26,7 @@ void main() async {
   //   print('Failed to initialize Firebase: $e');
   //   // Continue without Firebase for now
   // }
-  print('Firebase initialization skipped');
+  debugPrint('Firebase initialization skipped');
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([

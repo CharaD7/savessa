@@ -105,7 +105,7 @@ class EmailValidatorService {
       
       // Skip API call if no API key is provided
       if (apiKey.isEmpty) {
-        print('Abstract API key not found in environment variables');
+        debugPrint('Abstract API key not found in environment variables');
         return (true, null); // Fallback to basic validation
       }
       
@@ -150,7 +150,7 @@ class EmailValidatorService {
         return (true, null);
       } else {
         // Fallback to basic validation if API fails
-        print('Email validation API error: ${response.statusCode}');
+        debugPrint('Email validation API error: ${response.statusCode}');
         
         // Check domain MX records using a different approach
         final domainParts = email.split('@');
@@ -175,7 +175,7 @@ class EmailValidatorService {
         return (true, null);
       }
     } catch (e) {
-      print('Email validation error: $e');
+      debugPrint('Email validation error: $e');
       // Fallback to basic validation if API fails
       return (true, null);
     }
@@ -214,7 +214,7 @@ class EmailValidatorService {
     await Future.delayed(const Duration(seconds: 1));
     
     // In a real app, you would send an actual email with the code
-    print('Verification code for $email: $code');
+    debugPrint('Verification code for $email: $code');
     
     return true;
   }
@@ -247,6 +247,10 @@ class EmailValidatorService {
     // Send verification email
     final emailSent = await sendVerificationEmail(email);
     if (!emailSent) {
+      return false;
+    }
+    
+    if (!context.mounted) {
       return false;
     }
     

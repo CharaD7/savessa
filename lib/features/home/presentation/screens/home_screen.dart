@@ -182,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             Text(
                               'home.this_month'.tr(),
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                             Text(
@@ -199,8 +199,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           children: [
                             Text(
                               'home.all_time'.tr(),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withOpacity(0.8),
+style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                             Text(
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       borderRadius: BorderRadius.circular(6),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: goal['color'].withOpacity(0.4),
+                                          color: goal['color'].withValues(alpha: 0.4),
                                           blurRadius: 6,
                                           offset: const Offset(0, 2),
                                         ),
@@ -532,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 children: [
                   // Semi-transparent background
                   Container(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                   ),
                   
                   // Celebration content
@@ -546,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           height: 200,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppTheme.gold.withOpacity(0.2),
+                            color: AppTheme.gold.withValues(alpha: 0.2),
                           ),
                           child: const Center(
                             child: Icon(
@@ -651,7 +651,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -676,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Text(
                   dateFormat.format(date),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],

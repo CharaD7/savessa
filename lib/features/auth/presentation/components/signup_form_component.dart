@@ -11,7 +11,6 @@ import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/services/validation/email_validator_service.dart';
 import 'package:savessa/services/validation/password_validator_service.dart';
 import 'package:savessa/services/validation/phone_validator_service.dart';
-import 'package:savessa/shared/widgets/world_flag_overlay.dart';
 /// A reusable component that displays a signup form with fields for first name,
 /// middle name, last name, email, phone number, password, and confirm password,
 /// along with a signup button.
@@ -166,7 +165,9 @@ class SignUpFormComponent extends StatefulWidget {
 
 class _SignUpFormComponentState extends State<SignUpFormComponent> {
   // Local variables to track state
+  // ignore: unused_field
   String _countryCode = '';
+  // ignore: unused_field
   String _completePhoneNumber = '';
   int _phoneDigits = 0;
   ValidationStatus _phoneLocalStatus = ValidationStatus.none;
@@ -226,7 +227,6 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
         statusColor = Colors.orange;
         break;
       case ValidationStatus.none:
-      default:
         targetColor = isAcceptable ? Colors.green : Colors.red;
         statusIcon = null;
         statusColor = Colors.transparent;
@@ -235,45 +235,42 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
 
     final rangeLabel = minLen == maxLen ? '$maxLen' : '$minLen-$maxLen';
 
-    return Container(
-      decoration: const BoxDecoration(),
-      child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(begin: Colors.red, end: targetColor),
-        duration: const Duration(milliseconds: 200),
-        builder: (context, color, _) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$_phoneDigits / $rangeLabel',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+    return TweenAnimationBuilder<Color?>(
+      tween: ColorTween(begin: Colors.red, end: targetColor),
+      duration: const Duration(milliseconds: 200),
+      builder: (context, color, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$_phoneDigits / $rangeLabel',
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            if (statusIcon != null)
+              Icon(
+                statusIcon,
+                size: 16,
+                color: statusColor,
+              ),
+            if (widget.showPhoneDetecting) ...[
+              const SizedBox(width: 6),
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
                 ),
               ),
-              const SizedBox(width: 6),
-              if (statusIcon != null)
-                Icon(
-                  statusIcon,
-                  size: 16,
-                  color: statusColor,
-                ),
-              if (widget.showPhoneDetecting) ...[
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                  ),
-                ),
-              ],
             ],
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 
@@ -420,7 +417,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                     decoration: InputDecoration(
                       hintText: widget.phoneFocus.hasFocus ? 'Enter phone number' : 'Phone number',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                       // Hide any default counter from TextField
                       counterText: '',
@@ -430,14 +427,14 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
+                      fillColor: Colors.white.withValues(alpha: 0.1),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),

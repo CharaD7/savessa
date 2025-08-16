@@ -17,7 +17,7 @@ class WorldFlagOverlay extends StatelessWidget {
           width: 22,
           height: 16,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
           child: const Center(

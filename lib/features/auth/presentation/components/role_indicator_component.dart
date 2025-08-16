@@ -40,10 +40,10 @@ class RoleIndicatorComponent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white.withOpacity(0.1),
+        color: backgroundColor ?? Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: borderColor ?? Colors.white.withOpacity(0.2),
+          color: borderColor ?? Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),

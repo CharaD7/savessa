@@ -65,7 +65,6 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
     
     return Scaffold(
       body: Container(
@@ -100,7 +99,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     Text(
                       'Select your preferred language to continue',
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                         fontSize: 16,
                       ),
                       textAlign: TextAlign.center,
@@ -182,8 +181,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                               boxShadow: [
                                 BoxShadow(
                                   color: isHovered
-                                    ? AppTheme.gold.withOpacity(0.5)
-                                    : Colors.black.withOpacity(0.1),
+                                    ? AppTheme.gold.withValues(alpha: 0.5)
+                                    : Colors.black.withValues(alpha: 0.1),
                                   blurRadius: isHovered ? 12 : 4,
                                   spreadRadius: isHovered ? 2 : 0,
                                 ),
@@ -200,7 +199,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                                     borderRadius: BorderRadius.circular(4),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
+                                        color: Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 2,
                                         spreadRadius: 0,
                                       ),

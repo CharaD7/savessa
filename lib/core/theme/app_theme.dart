@@ -66,7 +66,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: lightGrey.withOpacity(0.3),
+      fillColor: lightGrey.withValues(alpha: 0.3),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
@@ -129,9 +129,9 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith<Color>((states) {
         if (states.contains(WidgetState.selected)) {
-          return royalPurple.withOpacity(0.5);
+          return royalPurple.withValues(alpha: 0.5);
         }
-        return lightGrey.withOpacity(0.5);
+        return lightGrey.withValues(alpha: 0.5);
       }),
     ),
   );
@@ -252,9 +252,9 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith<Color>((states) {
         if (states.contains(WidgetState.selected)) {
-          return lightPurple.withOpacity(0.5);
+          return lightPurple.withValues(alpha: 0.5);
         }
-        return grey.withOpacity(0.5);
+        return grey.withValues(alpha: 0.5);
       }),
     ),
   );

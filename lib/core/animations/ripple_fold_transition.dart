@@ -114,7 +114,7 @@ class _RippleFoldTransitionState extends State<RippleFoldTransition> {
               child: Opacity(
                 opacity: widget.animation.value,
                 child: Container(
-                  color: widget.waveColor.withOpacity(0.3),
+                  color: widget.waveColor.withValues(alpha: 0.3),
                 ),
               ),
             ),

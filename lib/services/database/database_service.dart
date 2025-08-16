@@ -1,5 +1,6 @@
 import 'package:postgres/postgres.dart';
 import 'package:savessa/core/config/env_config.dart';
+import 'package:flutter/foundation.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -29,7 +30,7 @@ class DatabaseService {
         useSSL: config.dbSsl.toLowerCase() == 'require',
       );
     } catch (e) {
-      print('Error initializing database connection: $e');
+      debugPrint('Error initializing database connection: $e');
       throw Exception('Failed to initialize PostgreSQL connection: $e');
     }
   }
@@ -39,9 +40,9 @@ class DatabaseService {
       try {
         await _connection.open();
         _isConnected = true;
-        print('Connected to PostgreSQL database');
+        debugPrint('Connected to PostgreSQL database');
       } catch (e) {
-        print('Failed to connect to PostgreSQL database: $e');
+        debugPrint('Failed to connect to PostgreSQL database: $e');
         rethrow;
       }
     }
@@ -51,7 +52,7 @@ class DatabaseService {
     if (_isConnected) {
       await _connection.close();
       _isConnected = false;
-      print('Disconnected from PostgreSQL database');
+      debugPrint('Disconnected from PostgreSQL database');
     }
   }
 
@@ -64,7 +65,7 @@ class DatabaseService {
       final results = await _connection.mappedResultsQuery(sql, substitutionValues: parameters);
       return results.map((row) => row.values.first).toList();
     } catch (e) {
-      print('Query error: $e');
+      debugPrint('Query error: $e');
       rethrow;
     }
   }
@@ -77,7 +78,7 @@ class DatabaseService {
     try {
       return await _connection.execute(sql, substitutionValues: parameters);
     } catch (e) {
-      print('Execute error: $e');
+      debugPrint('Execute error: $e');
       rethrow;
     }
   }

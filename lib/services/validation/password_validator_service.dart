@@ -174,12 +174,12 @@ class PasswordValidatorService {
         return (true, null);
       } else {
         // API error, assume password is ok for now
-        print('HIBP API error: ${response.statusCode}');
+        debugPrint('HIBP API error: ${response.statusCode}');
         return (true, null);
       }
     } catch (e) {
       // Error occurred, assume password is ok for now
-      print('HIBP check error: $e');
+      debugPrint('HIBP check error: $e');
       return (true, null);
     }
   }

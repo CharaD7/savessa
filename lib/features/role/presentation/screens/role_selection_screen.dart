@@ -76,7 +76,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
     
     return Scaffold(
       body: Container(
@@ -109,7 +108,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                 Text(
                   'Select how you want to use Savessa',
                   style: TextStyle(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                     fontSize: 16,
                   ),
                 ),
@@ -146,8 +145,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                                 boxShadow: [
                                   BoxShadow(
                                     color: isSelected
-                                        ? AppTheme.gold.withOpacity(0.5 + (0.5 * animValue))
-                                        : Colors.black.withOpacity(0.1),
+                                        ? AppTheme.gold.withValues(alpha: 0.5 + (0.5 * animValue))
+                                        : Colors.black.withValues(alpha: 0.1),
                                     blurRadius: isSelected ? 20 : 4,
                                     spreadRadius: isSelected ? 2 : 0,
                                   ),
@@ -166,7 +165,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                                         decoration: BoxDecoration(
                                           color: isSelected
                                               ? theme.colorScheme.onSecondary
-                                              : theme.colorScheme.primary.withOpacity(0.1),
+                                              : theme.colorScheme.primary.withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Center(
@@ -204,8 +203,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                                               role['subtitle'],
                                               style: TextStyle(
                                                 color: isSelected
-                                                    ? theme.colorScheme.onSecondary.withOpacity(0.8)
-                                                    : theme.colorScheme.primary.withOpacity(0.7),
+                                                    ? theme.colorScheme.onSecondary.withValues(alpha: 0.8)
+                                                    : theme.colorScheme.primary.withValues(alpha: 0.7),
                                                 fontSize: 14,
                                               ),
                                             ),
@@ -222,8 +221,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                                     role['description'],
                                     style: TextStyle(
                                       color: isSelected
-                                          ? theme.colorScheme.onSecondary.withOpacity(0.9)
-                                          : theme.colorScheme.primary.withOpacity(0.7),
+                                          ? theme.colorScheme.onSecondary.withValues(alpha: 0.9)
+                                          : theme.colorScheme.primary.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),
                                   ),

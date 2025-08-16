@@ -51,11 +51,11 @@ class LoginSignupToggleComponent extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white.withOpacity(0.1),
+          color: backgroundColor ?? Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               spreadRadius: 0,
             ),
@@ -139,12 +139,12 @@ class LoginSignupToggleComponent extends StatelessWidget {
     else {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white.withOpacity(0.1),
+decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               spreadRadius: 0,
             ),

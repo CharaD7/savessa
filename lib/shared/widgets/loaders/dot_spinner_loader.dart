@@ -116,7 +116,7 @@ class _DotSpinnerPainter extends CustomPainter {
       
       // Draw the dot
       final paint = Paint()
-        ..color = color.withOpacity(opacity)
+        ..color = color.withValues(alpha: opacity)
         ..style = PaintingStyle.fill;
       
       canvas.drawCircle(

@@ -204,9 +204,6 @@ class _GradientSquarePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Calculate the cell size (25% of the total size)
-    final cellSize = size.width / 4;
-    
     // Draw background
     final bgPaint = Paint()
       ..color = Colors.transparent;
