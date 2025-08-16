@@ -237,7 +237,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
 
     return Container(
       decoration: const BoxDecoration(),
-child: TweenAnimationBuilderColor?e(
+      child: TweenAnimationBuilder<Color?>(
         tween: ColorTween(begin: Colors.red, end: targetColor),
         duration: const Duration(milliseconds: 200),
         builder: (context, color, _) {
@@ -266,7 +266,7 @@ child: TweenAnimationBuilderColor?e(
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimationColor(Colors.white70),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
                   ),
                 ),
               ],
