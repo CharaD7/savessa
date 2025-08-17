@@ -227,22 +227,25 @@ class _AppTextFieldState extends State<AppTextField> {
 		}
 
 		// Add password toggle if field is password
-		if (widget.obscureText && widget.showPasswordToggle) {
-			final eyeIcon = IconButton(
-				padding: EdgeInsets.zero,
-				constraints: const BoxConstraints(minHeight: 28),
-				visualDensity: VisualDensity.compact,
-				icon: Icon(
-					_obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-					size: 20,
-					color: Colors.white.withAlpha(230),
+if (widget.obscureText && widget.showPasswordToggle) {
+			final eyeIcon = Padding(
+				padding: const EdgeInsets.only(right: 5),
+				child: IconButton(
+					padding: EdgeInsets.zero,
+					constraints: const BoxConstraints(minHeight: 28),
+					visualDensity: VisualDensity.compact,
+					icon: Icon(
+						_obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+						size: 20,
+						color: Colors.white.withAlpha(230),
+					),
+					onPressed: () {
+						setState(() {
+							_obscureText = !_obscureText;
+						});
+					},
+					splashRadius: 20,
 				),
-				onPressed: () {
-					setState(() {
-						_obscureText = !_obscureText;
-					});
-				},
-				splashRadius: 20,
 			);
 			suffixIcons.add(eyeIcon);
 		}
