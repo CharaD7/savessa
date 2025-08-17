@@ -370,6 +370,10 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
 
   Widget? _buildSuffixIcon() {
     final List<Widget> suffixIcons = [];
+    // Keep references to special icons to control spacing
+    Widget? clearRef;
+    Widget? validationRef;
+    Widget? eyeRef;
 
     // Prepare validation status widget (do not add yet)
     Widget? validationWidget;
@@ -423,16 +427,17 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
             },
             splashRadius: 18,
           );
+          clearRef = clearBtn;
           suffixIcons.add(clearBtn);
         }
         if (validationWidget != null) {
-          suffixIcons.add(
-            Container(
-              margin: const EdgeInsets.only(right: 5),
-              padding: const EdgeInsets.only(right: 5),
-              child: validationWidget,
-            ),
+          final validationContainer = Container(
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.only(right: 5),
+            child: validationWidget,
           );
+          validationRef = validationContainer;
+          suffixIcons.add(validationContainer);
         }
       } else {
         // For password fields: validation first (if any), then clear, then eye toggle
@@ -453,12 +458,14 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
             },
             splashRadius: 18,
           );
+          clearRef = clearBtn;
           suffixIcons.add(clearBtn);
         }
         if (widget.showPasswordToggle) {
-          suffixIcons.add(
-            Padding(
-              padding: const EdgeInsets.only(right: 5),
+          final eyeWidget = Padding(
+            padding: const EdgeInsets.only(right: 5),
+            child: Transform.translate(
+              offset: const Offset(-2, 0),
               child: IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -477,6 +484,8 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
               ),
             ),
           );
+          eyeRef = eyeWidget;
+          suffixIcons.add(eyeWidget);
         }
       }
     }
@@ -488,41 +497,45 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
     if (suffixIcons.length == 1) {
       return suffixIcons.first;
     }
-    
-    // If we have multiple suffix icons, wrap them in a row with 5px spacing around the clear icon
-    if (suffixIcons.length == 2) {
-      // [A, B] -> always 5px between
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          suffixIcons[0],
-          const SizedBox(width: 5),
-          suffixIcons[1],
-        ],
-      );
-    } else if (suffixIcons.length == 3) {
-      // Expected order: [validation, clear, eye] => 5px between each neighbor of clear
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          suffixIcons[0],
-          const SizedBox(width: 5), // validation -> clear
-          suffixIcons[1],
-          const SizedBox(width: 5), // clear -> eye
-          suffixIcons[2],
-        ],
-      );
+
+    // Build with conditional spacing:
+    // - Email (non-password): remove left gap before validation icon when following clear
+    // - Password fields: remove both left and right gaps around the clear icon
+    final List<Widget> children = [];
+    for (int i = 0; i < suffixIcons.length; i++) {
+      final current = suffixIcons[i];
+      if (i > 0) {
+        final prev = suffixIcons[i - 1];
+        double gap = 2;
+        final isPassword = widget.obscureText;
+        final prevIsClear = identical(prev, clearRef);
+        final currIsClear = identical(current, clearRef);
+        final currIsEye = identical(current, eyeRef);
+        final prevIsClearCurrIsValidation = identical(prev, clearRef) && identical(current, validationRef);
+
+        if (isPassword) {
+          // Password fields: make validation/clear closer to the eye by removing the gap before the eye
+          if (currIsEye) {
+            gap = 0; // no space before the eye icon
+          } else if (prevIsClear) {
+            gap = 0; // no space after clear
+          } else if (currIsClear) {
+            gap = 0; // no space before clear
+          }
+        } else if (prevIsClearCurrIsValidation) {
+          // Email field: remove gap between clear and validation to bring them closer
+          gap = 0;
+        }
+        if (gap > 0) {
+          children.add(SizedBox(width: gap));
+        }
+      }
+      children.add(current);
     }
 
-    // Fallback: join with 5px spacing between each
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < suffixIcons.length; i++) ...[
-          if (i > 0) const SizedBox(width: 5),
-          suffixIcons[i],
-        ]
-      ],
+      children: children,
     );
   }
 

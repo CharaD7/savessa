@@ -207,6 +207,8 @@ class _AppTextFieldState extends State<AppTextField> {
 		}
 
 		final List<Widget> suffixIcons = [];
+		Widget? clearRef;
+		Widget? eyeRef;
 
 		// Add clear button if text is not empty and field is enabled
 		if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
@@ -223,30 +225,35 @@ class _AppTextFieldState extends State<AppTextField> {
 				},
 				splashRadius: 18,
 			);
+			clearRef = clearBtn;
 			suffixIcons.add(clearBtn);
 		}
 
 		// Add password toggle if field is password
-if (widget.obscureText && widget.showPasswordToggle) {
+		if (widget.obscureText && widget.showPasswordToggle) {
 			final eyeIcon = Padding(
 				padding: const EdgeInsets.only(right: 5),
-				child: IconButton(
-					padding: EdgeInsets.zero,
-					constraints: const BoxConstraints(minHeight: 28),
-					visualDensity: VisualDensity.compact,
-					icon: Icon(
-						_obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-						size: 20,
-						color: Colors.white.withAlpha(230),
+				child: Transform.translate(
+					offset: const Offset(-2, 0),
+					child: IconButton(
+						padding: EdgeInsets.zero,
+						constraints: const BoxConstraints(minHeight: 28),
+						visualDensity: VisualDensity.compact,
+						icon: Icon(
+							_obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+							size: 20,
+							color: Colors.white.withAlpha(230),
+						),
+						onPressed: () {
+							setState(() {
+								_obscureText = !_obscureText;
+							});
+						},
+						splashRadius: 20,
 					),
-					onPressed: () {
-						setState(() {
-							_obscureText = !_obscureText;
-						});
-					},
-					splashRadius: 20,
 				),
 			);
+			eyeRef = eyeIcon;
 			suffixIcons.add(eyeIcon);
 		}
 
@@ -254,15 +261,33 @@ if (widget.obscureText && widget.showPasswordToggle) {
 			return null;
 		}
 
-		// Add 5px spacing between each icon
+		// Add conditional spacing with 5px gaps, but remove gaps around clear icon in password fields
+		final List<Widget> children = [];
+		for (int i = 0; i < suffixIcons.length; i++) {
+			final current = suffixIcons[i];
+			if (i > 0) {
+				final prev = suffixIcons[i - 1];
+				double gap = 2;
+				if (widget.obscureText) {
+					// Make validation/clear closer to the eye by removing the gap before the eye
+					if (identical(current, eyeRef)) {
+						gap = 0; // no space before eye
+					} else if (identical(prev, clearRef)) {
+						gap = 0; // no space after clear
+					} else if (identical(current, clearRef)) {
+						gap = 0; // before clear
+					}
+				}
+				if (gap > 0) {
+					children.add(SizedBox(width: gap));
+				}
+			}
+			children.add(current);
+		}
+
 		return Row(
 			mainAxisSize: MainAxisSize.min,
-			children: [
-				for (int i = 0; i < suffixIcons.length; i++) ...[
-					if (i > 0) const SizedBox(width: 5),
-					suffixIcons[i],
-				]
-			],
+			children: children,
 		);
 	}
 
