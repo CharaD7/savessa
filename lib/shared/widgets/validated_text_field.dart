@@ -370,116 +370,117 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
 
   Widget? _buildSuffixIcon() {
     final List<Widget> suffixIcons = [];
-    
-    // Add validation status indicator if enabled
+
+    // Prepare validation status widget (do not add yet)
+    Widget? validationWidget;
     if (widget.showValidationStatus && _controller.text.isNotEmpty) {
       if (_isValidating) {
-        // Show loading indicator while validating
-        suffixIcons.add(
-          const GradientSquareLoader(
-            size: 20,
-            color1: AppTheme.gold,
-            animationDurationMs: 1200,
-          ),
+        validationWidget = const GradientSquareLoader(
+          size: 20,
+          color1: AppTheme.gold,
+          animationDurationMs: 1200,
         );
       } else {
-        // Show validation status icon
         switch (_validationStatus) {
           case ValidationStatus.valid:
-            suffixIcons.add(
-              widget.obscureText
-                  ? const Padding(
-                      padding: EdgeInsets.only(right: 10),
-                      child: Icon(
-                        IconMapping.checkCircle,
-                        color: Colors.green,
-                        size: 20,
-                      ),
-                    )
-                  : const Icon(
-                      IconMapping.checkCircle,
-                      color: Colors.green,
-                      size: 20,
-                    ),
+            validationWidget = const Icon(
+              IconMapping.checkCircle,
+              color: Colors.green,
+              size: 20,
             );
             break;
           case ValidationStatus.invalid:
-            suffixIcons.add(
-              widget.obscureText
-                  ? const Padding(
-                      padding: EdgeInsets.only(right: 10),
-                      child: Icon(
-                        IconMapping.error,
-                        color: Colors.red,
-                        size: 20,
-                      ),
-                    )
-                  : const Icon(
-                      IconMapping.error,
-                      color: Colors.red,
-                      size: 20,
-                    ),
+            validationWidget = const Icon(
+              IconMapping.error,
+              color: Colors.red,
+              size: 20,
             );
             break;
           default:
-            // No icon for none status
+            validationWidget = null;
             break;
         }
       }
     }
-    
+
     // Add custom suffix icon if provided
     if (widget.suffixIcon != null) {
       suffixIcons.add(widget.suffixIcon!);
     } else {
-      // Add clear button if text is not empty and field is enabled
-      if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
-        final clearBtn = IconButton(
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          visualDensity: VisualDensity.compact,
-          icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withValues(alpha: 0.9)),
-          onPressed: () {
-            _controller.clear();
-            if (widget.onChanged != null) {
-              widget.onChanged!('');
-            }
-          },
-          splashRadius: 18,
-        );
-        // For password fields, shift clear icon 10px to the right by adding left padding
-        final clearWrapped = widget.obscureText
-            ? Padding(padding: const EdgeInsets.only(left: 10, right: 10), child: clearBtn)
-            : clearBtn;
-        suffixIcons.add(clearWrapped);
-      }
-      
-      // Add password toggle if field is password
-      if (widget.obscureText && widget.showPasswordToggle) {
-        suffixIcons.add(
-          Padding(
-            padding: const EdgeInsets.only(right: 5), // shift eye icon 5px to the left
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              visualDensity: VisualDensity.compact,
-              icon: Icon(
-                _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-                size: 20,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-              splashRadius: 18,
+      // For non-password fields (e.g., Email): clear first, then validation
+      if (!widget.obscureText) {
+        if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
+          final clearBtn = IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            visualDensity: VisualDensity.compact,
+            icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withValues(alpha: 0.9)),
+            onPressed: () {
+              _controller.clear();
+              if (widget.onChanged != null) {
+                widget.onChanged!('');
+              }
+            },
+            splashRadius: 18,
+          );
+          suffixIcons.add(clearBtn);
+        }
+        if (validationWidget != null) {
+          suffixIcons.add(
+            Container(
+              margin: const EdgeInsets.only(right: 5),
+              padding: const EdgeInsets.only(right: 5),
+              child: validationWidget,
             ),
-          ),
-        );
+          );
+        }
+      } else {
+        // For password fields: validation first (if any), then clear, then eye toggle
+        if (validationWidget != null) {
+          suffixIcons.add(validationWidget);
+        }
+        if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
+          final clearBtn = IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            visualDensity: VisualDensity.compact,
+            icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withValues(alpha: 0.9)),
+            onPressed: () {
+              _controller.clear();
+              if (widget.onChanged != null) {
+                widget.onChanged!('');
+              }
+            },
+            splashRadius: 18,
+          );
+          suffixIcons.add(clearBtn);
+        }
+        if (widget.showPasswordToggle) {
+          suffixIcons.add(
+            Padding(
+              padding: const EdgeInsets.only(right: 5),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                visualDensity: VisualDensity.compact,
+                icon: Icon(
+                  _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+                  size: 20,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+                splashRadius: 18,
+              ),
+            ),
+          );
+        }
       }
     }
-    
+
     if (suffixIcons.isEmpty) {
       return null;
     }
