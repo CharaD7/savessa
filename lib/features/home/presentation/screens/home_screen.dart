@@ -7,6 +7,10 @@ import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/shared/widgets/app_button.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:savessa/services/sync/sync_service.dart';
+import 'package:savessa/services/sync/queue_store.dart';
+import 'package:savessa/services/user/user_data_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -68,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     
     // Show milestone celebration after a short delay (for demo purposes)
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       setState(() {
         _showMilestoneCelebration = true;
       });
@@ -75,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       
       // Hide celebration after animation completes
       Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
         setState(() {
           _showMilestoneCelebration = false;
         });
@@ -109,9 +115,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final theme = Theme.of(context);
     
     return Scaffold(
-      appBar: AppBar(
+appBar: AppBar(
+        automaticallyImplyLeading: Navigator.of(context).canPop(),
         title: Text('home.title'.tr()),
         actions: [
+          // Sync status chip
+          Builder(builder: (context) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: _HomeSyncChip(),
+            );
+          }),
           IconButton(
             icon: const Icon(IconMapping.notifications),
             onPressed: () {
@@ -137,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 children: [
                   // Welcome message
                   Text(
-                    '${'home.welcome'.tr()}, User!',
+'${'home.welcome'.tr()}, ${context.select<UserDataService, String>((s) => s.firstName.isNotEmpty ? s.firstName : 'User')}!',
                     style: theme.textTheme.headlineSmall,
                   ),
               const SizedBox(height: 24),
@@ -265,7 +279,19 @@ style: theme.textTheme.bodySmall?.copyWith(
                       context,
                       IconMapping.addBox,
                       'home.create_group'.tr(),
-                      () => context.go('/groups/create'),
+() {
+                        final role = context.read<UserDataService>().role;
+                        if (role != 'admin') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Only Savings Managers can create groups. You can join existing groups.'),
+                              backgroundColor: Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                          return;
+                        }
+                        context.go('/groups/create');
+                      },
                     ),
                   ),
                 ],
@@ -430,9 +456,9 @@ style: theme.textTheme.bodySmall?.copyWith(
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () {
+IconButton(
+                        icon: const Icon(IconMapping.chevronLeft),
+                        onPressed: () {
                             setState(() {
                               _selectedDate = DateTime(
                                 _selectedDate.year,
@@ -448,9 +474,9 @@ style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
+IconButton(
+                        icon: const Icon(IconMapping.chevronRight),
+                        onPressed: () {
                             setState(() {
                               _selectedDate = DateTime(
                                 _selectedDate.year,
@@ -548,9 +574,9 @@ style: theme.textTheme.bodySmall?.copyWith(
                             shape: BoxShape.circle,
                             color: AppTheme.gold.withValues(alpha: 0.2),
                           ),
-                          child: const Center(
+child: const Center(
                             child: Icon(
-                              Icons.emoji_events,
+                              IconMapping.award,
                               size: 100,
                               color: AppTheme.gold,
                             ),
@@ -914,5 +940,33 @@ style: theme.textTheme.bodySmall?.copyWith(
         ),
       ],
     );
+  }
+}
+
+class _HomeSyncChip extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    try {
+      final sync = Provider.of<SyncService>(context, listen: false);
+      return ValueListenableBuilder<SyncState>(
+        valueListenable: sync.stateNotifier,
+        builder: (context, s, _) {
+          final (icon, color, label) = switch (s) {
+            SyncState.syncing => (Icons.cloud_sync, Theme.of(context).colorScheme.primary, 'Syncing'),
+            SyncState.error => (Icons.cloud_off, Theme.of(context).colorScheme.error, 'Sync Error'),
+            _ => (Icons.cloud_done, Colors.green, 'Synced'),
+          };
+final qs = Provider.of<QueueStore>(context, listen: false);
+          return Chip(
+            avatar: Icon(icon, color: color, size: 18),
+            label: Text('$label${qs.pendingCount > 0 ? ' (${qs.pendingCount})' : ''}', style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+            backgroundColor: color.withValues(alpha: 0.08),
+            shape: StadiumBorder(side: BorderSide(color: color.withValues(alpha: 0.3))),
+          );
+        },
+      );
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
   }
 }

@@ -11,6 +11,9 @@ import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/services/validation/email_validator_service.dart';
 import 'package:savessa/services/validation/password_validator_service.dart';
 import 'package:savessa/shared/widgets/app_logo.dart';
+import 'package:savessa/services/database/database_service.dart';
+import 'package:provider/provider.dart';
+import 'package:savessa/services/user/user_data_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? selectedRole;
@@ -121,14 +124,56 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     });
 
     try {
-      // In a real app, we would use Firebase Auth here
-      // For now, we'll just simulate a login
-      await Future.delayed(const Duration(seconds: 2));
-      
+      final identifier = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      final db = DatabaseService();
+      final user = await db.getUserByEmailOrPhone(identifier);
+      if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No account found with that email or phone.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
+
+      try {
+        final verified = await db.verifyCredentials(identifier: identifier, password: password);
+        if (verified == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Invalid credentials. Please try again.'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          return;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        final msg = e.toString().contains('INVALID_PASSWORD') ? 'Incorrect password. Please try again.' : 'Authentication failed.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
+
       if (!mounted) return;
-      
-      // Navigate to home screen
-      context.go('/home');
+      final userSession = Provider.of<UserDataService>(context, listen: false);
+      userSession.setUser(user);
+
+      final role = (user['role'] as String?) ?? 'member';
+      if (role == 'admin') {
+        context.go('/home/manager');
+      } else {
+        context.go('/home');
+      }
     } catch (e) {
       if (!mounted) return;
       
