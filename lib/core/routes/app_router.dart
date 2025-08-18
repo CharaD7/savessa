@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:savessa/services/auth/auth_service.dart';
+import 'package:savessa/services/user/user_data_service.dart';
 
 // Import screens
 import 'package:savessa/features/splash/presentation/screens/splash_screen.dart';
+import 'package:savessa/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:savessa/features/language/presentation/screens/language_selection_screen.dart';
 import 'package:savessa/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:savessa/features/role/presentation/screens/role_selection_screen.dart';
@@ -10,11 +14,22 @@ import 'package:savessa/features/account/presentation/screens/account_setup_scre
 import 'package:savessa/features/auth/presentation/screens/login_screen.dart';
 import 'package:savessa/features/auth/presentation/screens/register_screen.dart';
 import 'package:savessa/features/home/presentation/screens/home_screen.dart';
+import 'package:savessa/features/home/presentation/screens/manager_home_screen.dart';
 import 'package:savessa/features/settings/presentation/screens/settings_screen.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/theme_demo.dart';
+import 'package:savessa/features/security/presentation/screens/two_factor_screen.dart';
+import 'package:savessa/features/security/presentation/screens/totp_setup_screen.dart';
+import 'package:savessa/features/security/presentation/screens/otp_verify_screen.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
+
+import 'package:savessa/features/savings/presentation/screens/savings_screen.dart';
+import 'package:savessa/features/savings/presentation/screens/add_savings_screen.dart';
+import 'package:savessa/features/savings/presentation/screens/my_contributions_screen.dart';
+import 'package:savessa/features/profile/presentation/screens/profile_screen.dart';
+import 'package:savessa/features/groups/presentation/screens/groups_screen.dart';
+import 'package:savessa/features/groups/presentation/screens/join_group_screen.dart';
 
 // For now, we'll create placeholder screens
 class PlaceholderScreen extends StatelessWidget {
@@ -102,24 +117,29 @@ class AppRouter {
           return ScaffoldWithBottomNav(child: child);
         },
         routes: [
-          // Home/Dashboard
+          // Home/Dashboard - contributor default
           GoRoute(
             path: '/home',
             builder: (context, state) => const HomeScreen(),
+          ),
+          // Manager Dashboard
+          GoRoute(
+            path: '/home/manager',
+            builder: (context, state) => const ManagerHomeScreen(),
           ),
           
           // Savings
           GoRoute(
             path: '/savings',
-            builder: (context, state) => const PlaceholderScreen(title: 'Savings'),
+            builder: (context, state) => const SavingsScreen(),
             routes: [
               GoRoute(
                 path: 'add',
-                builder: (context, state) => const PlaceholderScreen(title: 'Add Savings'),
+                builder: (context, state) => const AddSavingsScreen(),
               ),
               GoRoute(
-                path: 'history',
-                builder: (context, state) => const PlaceholderScreen(title: 'Savings History'),
+                path: 'my',
+                builder: (context, state) => const MyContributionsScreen(),
               ),
             ],
           ),
@@ -127,11 +147,30 @@ class AppRouter {
           // Groups
           GoRoute(
             path: '/groups',
-            builder: (context, state) => const PlaceholderScreen(title: 'Groups'),
+            builder: (context, state) => const GroupsScreen(),
             routes: [
               GoRoute(
                 path: 'create',
-                builder: (context, state) => const PlaceholderScreen(title: 'Create Group'),
+                builder: (context, state) {
+                  // Guard: only admins (managers) can create groups
+                  try {
+                    final role = Provider.of<UserDataService>(context, listen: false).role;
+                    if (role != 'admin') {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Only Savings Managers can create groups.')),
+                        );
+                        GoRouter.of(context).go('/groups');
+                      });
+                      return const PlaceholderScreen(title: 'Groups');
+                    }
+                  } catch (_) {}
+                  return const PlaceholderScreen(title: 'Create Group');
+                },
+              ),
+              GoRoute(
+                path: 'join',
+                builder: (context, state) => const JoinGroupScreen(),
               ),
               GoRoute(
                 path: ':groupId',
@@ -152,7 +191,7 @@ class AppRouter {
           // Profile
           GoRoute(
             path: '/profile',
-            builder: (context, state) => const PlaceholderScreen(title: 'Profile'),
+            builder: (context, state) => const ProfileScreen(),
           ),
         ],
       ),
@@ -182,21 +221,65 @@ class AppRouter {
             path: 'theme',
             builder: (context, state) => const ThemeDemoScreen(),
           ),
+          GoRoute(
+            path: 'two-factor',
+            builder: (context, state) => const TwoFactorScreen(),
+            routes: [
+              GoRoute(
+                path: 'totp',
+                builder: (context, state) => const TotpSetupScreen(),
+              ),
+              GoRoute(
+                path: 'otp',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>?;
+                  final channel = (extra?['channel'] as String?) ?? 'sms';
+                  return OtpVerifyScreen(channel: channel);
+                },
+              ),
+            ],
+          ),
         ],
       ),
       
-      // Notifications
+// Notifications
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const PlaceholderScreen(title: 'Notifications'),
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
     
     // Redirect logic
     redirect: (context, state) {
-      // This will be expanded when authentication is set up
-      // For now, we'll just return null for all routes to allow all navigation
-      return null;
+      // Role-aware redirects
+      // Safe read of AuthService; if not available, do nothing
+      AuthService? auth;
+      try {
+        auth = Provider.of<AuthService>(context, listen: false);
+      } catch (_) {
+        return null;
+      }
+      final location = state.matchedLocation;
+      // Wait until role is resolved (prevents flicker loops)
+      if (!auth.roleResolved) return null;
+
+      final isAdmin = auth.role == 'admin';
+      final atManager = location.startsWith('/home/manager');
+      final atHome = location == '/home' || location.startsWith('/home?');
+
+      if (isAdmin) {
+        // Admins prefer manager dashboard; if they hit /home, send to manager
+        if (atHome) {
+          return '/home/manager';
+        }
+        return null; // no change otherwise
+      } else {
+        // Members cannot access manager dashboard
+        if (atManager) {
+          return '/home';
+        }
+        return null;
+      }
     },
   );
 }
