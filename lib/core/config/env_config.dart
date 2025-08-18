@@ -36,6 +36,15 @@ class EnvConfig {
   // API keys
   String get abstractApiKey => dotenv.env['ABSTRACT_API_KEY'] ?? '';
   
+  // SMTP / Email
+  String get smtpHost => dotenv.env['SMTP_HOST'] ?? '';
+  int get smtpPort => int.tryParse(dotenv.env['SMTP_PORT'] ?? '') ?? 587;
+  String get smtpUsername => dotenv.env['SMTP_USERNAME'] ?? '';
+  String get smtpPassword => dotenv.env['SMTP_PASSWORD'] ?? '';
+  bool get smtpUseTls => (dotenv.env['SMTP_USE_TLS'] ?? 'true').toLowerCase() == 'true';
+  String get emailFromAddress => dotenv.env['EMAIL_FROM_ADDRESS'] ?? '';
+  String get emailFromName => dotenv.env['EMAIL_FROM_NAME'] ?? 'Savessa';
+  
   // App configuration
   String get appName => dotenv.env['APP_NAME'] ?? 'Savessa';
   String get appEnv => dotenv.env['APP_ENV'] ?? 'development';
