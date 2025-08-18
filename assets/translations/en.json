@@ -103,6 +103,26 @@
     "join_group": "Join Group",
     "create_group": "Create Group"
   },
+  "manager": {
+    "dashboard_title": "Manager Dashboard",
+    "overview": "Dashboard Overview",
+    "active_members": "Active Members",
+    "monthly_goal": "This Month's Goal",
+    "goal_reached": "Great job! You've reached the monthly goal.",
+    "keep_going": "Keep going! You're close to the goal.",
+    "contribution_tracker": "Contribution Tracker",
+    "smart_contracts": "Smart Contract Controls",
+    "enable_automation": "Enable Automation",
+    "disable_automation": "Disable Automation",
+    "automation_desc": "Activate automatic verification and milestone tracking via smart contracts.",
+    "automation_toggled": "Automation setting updated",
+    "member_management": "Member Management",
+    "send_reminder": "Send Reminder",
+    "reminder_sent_via": "Reminder sent via {0} to {1}",
+    "sync_idle": "Synced",
+    "syncing": "Syncing…",
+    "sync_error": "Sync Error"
+  },
   "savings": {
     "title": "Savings",
     "add_savings": "Add Savings",
