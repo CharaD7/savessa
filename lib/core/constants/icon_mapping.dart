@@ -11,6 +11,7 @@ class IconMapping {
   static const IconData email = FeatherIcons.mail;
   static const IconData phone = FeatherIcons.phone;
   static const IconData lock = FeatherIcons.lock;
+  static const IconData lockOpen = FeatherIcons.unlock;
   static const IconData lockOutline = FeatherIcons.lock;
   
   // Home screen
@@ -24,6 +25,21 @@ class IconMapping {
   static const IconData arrowUpward = FeatherIcons.arrowUp;
   static const IconData arrowDownward = FeatherIcons.arrowDown;
   static const IconData location = FeatherIcons.mapPin;
+  static const IconData award = FeatherIcons.award;
+  static const IconData edit = FeatherIcons.edit;
+  static const IconData bell = FeatherIcons.bell;
+  static const IconData cloudDone = FeatherIcons.cloud;
+  static const IconData cloudSync = FeatherIcons.refreshCw;
+  static const IconData cloudOff = FeatherIcons.cloudOff;
+  static const IconData chevronRight = FeatherIcons.chevronRight;
+  static const IconData chevronLeft = FeatherIcons.chevronLeft;
+  static const IconData globe = FeatherIcons.globe;
+  static const IconData droplet = FeatherIcons.droplet;
+  static const IconData qr = FeatherIcons.grid; // QR-like
+  static const IconData message = FeatherIcons.messageSquare;
+  static const IconData logOut = FeatherIcons.logOut;
+  static const IconData fileText = FeatherIcons.fileText;
+  static const IconData helpCircle = FeatherIcons.helpCircle;
   
   // Bottom navigation
   static const IconData home = FeatherIcons.home;
