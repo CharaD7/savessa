@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "878601589661",
+    "project_id": "savessa-28ec0",
+    "storage_bucket": "savessa-28ec0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878601589661:android:334be7a408eafcc4f79574",
+        "android_client_info": {
+          "package_name": "com.example.savessa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJ_pPeG_2mFEMsXomb60vyfo_W88JmcEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
