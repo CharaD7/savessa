@@ -114,16 +114,9 @@ class _AnimatedEffects extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Sun rays along an S path
-                CustomPaint(
-                  size: Size(size * 2.0, size * 2.0),
-                  painter: _SPathRaysPainter(t: t, size: size),
-                ),
-
-                // Sparkles
-                ..._buildSparkles(t),
-
-                // Shimmer over logo
+                // Faint pulsing glow behind the logo
+                _LogoGlow(t: t, size: size),
+                // Shimmer over logo for a gentle sweep
                 _Shimmer(logo: logo, t: t, size: size),
               ],
             ),
@@ -133,53 +126,6 @@ class _AnimatedEffects extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildSparkles(double t) {
-    const int count = 28; // slightly fewer for smoothness
-    final widgets = <Widget>[];
-    for (int i = 0; i < count; i++) {
-      final angle = (i / count) * math.pi * 2;
-      final rnd = math.Random(i + 7);
-      final radius = size * 0.9 + (rnd.nextDouble() * size * 0.6);
-      final phase = t * 0.6; // slower movement
-      final x = math.cos(angle + phase * 2 * math.pi) * radius;
-      final y = math.sin(angle + phase * 2 * math.pi) * radius;
-      final scale = 0.8 + 0.65 * (0.5 + 0.5 * math.sin((phase + i / count) * 2 * math.pi));
-      final opacity = (0.42 + 0.5 * (0.5 + 0.5 * math.cos((phase + i / count) * 2 * math.pi))).clamp(0.0, 1.0);
-      final isLine = i.isEven; // alternate between line sparks and dots
-      widgets.add(Transform.translate(
-        offset: Offset(x, y),
-        child: Opacity(
-          opacity: opacity,
-          child: Transform.rotate(
-            angle: angle + t * 6.28318,
-            child: isLine
-                ? Container(
-                    width: 18 * scale,
-                    height: 2.6,
-                    decoration: BoxDecoration(
-                      color: AppTheme.gold,
-                      boxShadow: [
-                        BoxShadow(color: AppTheme.gold.withValues(alpha: 0.9), blurRadius: 7, spreadRadius: 1.2),
-                        BoxShadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 2, spreadRadius: 0.6),
-                      ],
-                      borderRadius: BorderRadius.circular(1.3),
-                    ),
-                  )
-                : Icon(
-                    Icons.star_rounded,
-                    color: AppTheme.gold.withValues(alpha: 0.97),
-                    size: 8 + 3 * scale,
-                    shadows: [
-                      Shadow(color: AppTheme.gold.withValues(alpha: 0.8), blurRadius: 7),
-                      Shadow(color: Colors.white.withValues(alpha: 0.45), blurRadius: 2.2),
-                    ],
-                  ),
-          ),
-        ),
-      ));
-    }
-    return widgets;
-  }
 }
 
 class _Shimmer extends StatelessWidget {
@@ -223,61 +169,40 @@ class _Shimmer extends StatelessWidget {
   }
 }
 
-class _SPathRaysPainter extends CustomPainter {
+class _LogoGlow extends StatelessWidget {
   final double t;
   final double size;
-  _SPathRaysPainter({required this.t, required this.size});
-
-  Path _buildSPath(Rect bounds) {
-    // Build a cubic-bezier "S" shape within bounds
-    final w = bounds.width;
-    final h = bounds.height;
-    final left = bounds.left + w * 0.25;
-    final right = bounds.left + w * 0.75;
-    final top = bounds.top + h * 0.2;
-    final bottom = bounds.top + h * 0.8;
-    final midY = bounds.top + h * 0.5;
-
-    final path = Path();
-    path.moveTo(right, top);
-    path.cubicTo(left, top, right, midY, left, midY);
-    path.cubicTo(right, midY, left, bottom, right, bottom);
-    return path;
-  }
+  const _LogoGlow({required this.t, required this.size});
 
   @override
-  void paint(Canvas canvas, Size s) {
-    final rect = Rect.fromCenter(center: Offset(s.width / 2, s.height / 2), width: size * 1.5, height: size * 1.5);
-
-    final sPath = _buildSPath(rect);
-
-    // Draw sun rays emanating along the S path
-    final rayPaint = Paint()
-      ..color = AppTheme.gold
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    const int rayCount = 24;
-    for (int i = 0; i < rayCount; i++) {
-      final p = (i / rayCount + t * 0.6) % 1.0;
-      final metric = sPath.computeMetrics().first;
-      final pos = metric.length * p;
-      final tangent = metric.getTangentForOffset(pos)!;
-      final start = tangent.position;
-      final dir = tangent.vector;
-      final normal = Offset(-dir.dy, dir.dx).direction; // angle
-      final len = 14.0 + 24.0 * (0.5 + 0.5 * math.sin(2 * math.pi * (t + i / rayCount)));
-      final end = start + Offset.fromDirection(normal, len);
-      canvas.drawLine(start, end, rayPaint);
-    }
-
-    // (Removed cog/machinery accents to keep only solid rays)
-  }
-
-  @override
-  bool shouldRepaint(covariant _SPathRaysPainter oldDelegate) {
-    return oldDelegate.t != t || oldDelegate.size != size;
+  Widget build(BuildContext context) {
+    final pulse = 0.5 + 0.5 * math.sin(2 * math.pi * (t * 0.9));
+    final glowAlpha = 0.10 + 0.16 * pulse; // faint
+    final radius = size * (1.4 + 0.25 * pulse);
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: SizedBox(
+          width: radius * 2,
+          height: radius * 2,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.gold.withValues(alpha: glowAlpha),
+                  AppTheme.royalPurple.withValues(alpha: 0.0),
+                ],
+                stops: const [0.0, 1.0],
+              ),
+            ),
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: size * 0.08, sigmaY: size * 0.08),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

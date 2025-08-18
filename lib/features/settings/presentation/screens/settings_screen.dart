@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:savessa/shared/widgets/app_button.dart';
 import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
-import 'package:savessa/core/theme/theme_toggle.dart';
+// import 'package:savessa/core/theme/theme_toggle.dart';
+import 'package:provider/provider.dart';
+import 'package:savessa/features/security/services/security_prefs_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -27,8 +29,8 @@ class SettingsScreen extends StatelessWidget {
               // Close the dialog
               Navigator.of(context).pop();
               
-              // Navigate to login screen with default role
-              context.go('/login', extra: 'member');
+              // Navigate back to account setup screen in login mode
+              context.go('/account-setup', extra: 'login');
             },
             child: const Text('Logout'),
           ),
@@ -40,7 +42,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+appBar: AppBar(
+        automaticallyImplyLeading: Navigator.of(context).canPop(),
         title: const Text('Settings'),
       ),
       body: SingleChildScrollView(
@@ -67,8 +70,11 @@ class SettingsScreen extends StatelessWidget {
                     'Security',
                     'Change password and security settings',
                     IconMapping.lock,
-                    () {},
+                    () => context.go('/settings/two-factor'),
                   ),
+                  const Divider(),
+                  // Biometric requirement toggle inline
+                  _BiometricRequirementTile(),
                   const Divider(),
                   _buildSettingItem(
                     context,
@@ -87,21 +93,20 @@ class SettingsScreen extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 16.0),
               child: Column(
                 children: [
-                  _buildSettingItem(
+_buildSettingItem(
                     context,
                     'Theme',
                     'Change app theme',
-                    Icons.color_lens,
-                    () => context.go('/settings/theme'),
-                    trailing: const ThemeToggleSwitch(),
+                    IconMapping.droplet,
+() => context.go('/settings/theme')
                   ),
                   const Divider(),
-                  _buildSettingItem(
+_buildSettingItem(
                     context,
                     'Language',
                     'Change app language',
-                    Icons.language,
-                    () => context.go('/language'),
+                    IconMapping.globe,
+() => context.go('/language')
                   ),
                 ],
               ),
@@ -113,27 +118,27 @@ class SettingsScreen extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 16.0),
               child: Column(
                 children: [
-                  _buildSettingItem(
+_buildSettingItem(
                     context,
                     'About',
                     'About Savessa',
-                    Icons.info_outline,
+                    IconMapping.infoOutline,
                     () {},
                   ),
                   const Divider(),
-                  _buildSettingItem(
+_buildSettingItem(
                     context,
-                    'Help & Support',
+                    'Help \u0026 Support',
                     'Get help with using Savessa',
-                    Icons.help_outline,
+                    IconMapping.infoOutline,
                     () {},
                   ),
                   const Divider(),
-                  _buildSettingItem(
+_buildSettingItem(
                     context,
-                    'Terms & Privacy',
+                    'Terms \u0026 Privacy',
                     'View terms of service and privacy policy',
-                    Icons.policy_outlined,
+                    IconMapping.infoOutline,
                     () {},
                   ),
                 ],
@@ -142,12 +147,11 @@ class SettingsScreen extends StatelessWidget {
             
             // Logout button
             const SizedBox(height: 24),
-            AppButton(
+AppButton(
               label: 'Logout',
-              onPressed: () => _logout(context),
+onPressed: () => _logout(context),
               type: ButtonType.primary,
               isFullWidth: true,
-              icon: Icons.logout,
             ),
             const SizedBox(height: 24),
           ],
@@ -192,8 +196,25 @@ class SettingsScreen extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
+trailing: trailing ?? const Icon(IconMapping.chevronRight),
       onTap: onTap,
+    );
+  }
+}
+
+class _BiometricRequirementTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SecurityPrefsService>(
+      builder: (context, prefs, _) {
+        return SwitchListTile(
+          secondary: const Icon(IconMapping.lock),
+          title: const Text('Require biometrics for sensitive actions'),
+          subtitle: const Text('Ask for Face/Touch ID before risky operations'),
+          value: prefs.requireBiometric,
+          onChanged: (v) => prefs.setRequireBiometric(v),
+        );
+      },
     );
   }
 }

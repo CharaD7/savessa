@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/shared/widgets/app_logo.dart';
+import 'package:savessa/shared/widgets/petal_ripple_background.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,63 +26,66 @@ class _SplashScreenState extends State<SplashScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      // Reverted to original purple gradient background
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.royalPurple,
-              AppTheme.lightPurple,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App logo with ripple/shimmer/sparkles
-                const AppLogo(
-                  size: 140,
-                  animate: true,
-                  glow: true,
-                  repeat: false, // play once
-                  assetPath: 'assets/images/logo.png',
-                ),
-                const SizedBox(height: 32),
-                
-                // App name
-                Text(
-                  'Savessa',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Welcome message
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: Text(
-                    'Welcome to Savessa – Your Community Savings Companion.',
-                    style: TextStyle(
-                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                      fontSize: 18,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                
-                const SizedBox(height: 48),
-              ],
+      body: Stack(
+        children: [
+          // Animated petal ripple background (lightweight CustomPainter)
+          Positioned.fill(
+            child: Transform.translate(
+              offset: const Offset(0, -40), // move background up by 40px total
+              child: const PetalRippleBackground(centerAlignment: Alignment(0.0, -0.12)),
             ),
           ),
-        ),
+          // Foreground content
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // App logo with faint pulsing glow and subtle zoom
+                  const AppLogo(
+                    size: 180,
+                    animate: true,
+                    glow: true,
+                    repeat: false, // play once for splash
+                    assetPath: 'assets/images/logo.png',
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // App name
+                  Text(
+                    'Savessa',
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimary,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      shadows: const [
+                        Shadow(color: Colors.black26, blurRadius: 6),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Welcome message
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      'Welcome to Savessa – Your Community Savings Companion.',
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.92),
+                        fontSize: 18,
+                        shadows: const [Shadow(color: Colors.black26, blurRadius: 4)],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
