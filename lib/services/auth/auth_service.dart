@@ -36,6 +36,16 @@ class AuthService with ChangeNotifier {
     await _auth.signOut();
     _role = 'member';
     _roleResolved = false;
+    _postgresUserId = null;
+  }
+
+  // Allows DB-auth flow to set the session details without Firebase
+  void setPostgresSessionFromDb(Map<String, dynamic> userRow) {
+    _postgresUserId = userRow['id']?.toString();
+    final dbRole = userRow['role']?.toString();
+    _role = (dbRole == 'admin' || dbRole == 'member') ? dbRole! : 'member';
+    _roleResolved = true;
+    notifyListeners();
   }
 
   Future<void> _mirrorAndResolveRole() async {
@@ -43,20 +53,28 @@ class AuthService with ChangeNotifier {
     if (u == null) {
       _roleResolved = true;
       _role = 'member';
+      _postgresUserId = null;
       return;
     }
     try {
-      // Mirror
-      await _db.upsertUserMirror(
-        firebaseUid: u.uid,
-        email: u.email,
-        phone: u.phoneNumber,
-      );
-      // Load user record
-      final row = await _db.getUserByFirebaseUid(u.uid);
-      _postgresUserId = row?['id']?.toString();
-      final dbRole = row?['role']?.toString();
-      _role = (dbRole == 'admin' || dbRole == 'member') ? dbRole! : 'member';
+      // Resolve role from Postgres using email or phone; do not upsert implicitly.
+      Map<String, dynamic>? row;
+      if (u.email != null && u.email!.isNotEmpty) {
+        row = await _db.getUserByEmail(u.email!);
+      }
+      row ??= (u.phoneNumber != null && u.phoneNumber!.isNotEmpty)
+          ? await _db.getUserByEmailOrPhone(u.phoneNumber!)
+          : null;
+
+      if (row == null) {
+        // No matching Postgres user; mark unresolved but default role
+        _postgresUserId = null;
+        _role = 'member';
+      } else {
+        _postgresUserId = row['id']?.toString();
+        final dbRole = row['role']?.toString();
+        _role = (dbRole == 'admin' || dbRole == 'member') ? dbRole! : 'member';
+      }
       _roleResolved = true;
     } catch (e) {
       debugPrint('AuthService role resolve error: $e');

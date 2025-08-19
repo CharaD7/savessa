@@ -4,23 +4,27 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:feather_icons/feather_icons.dart';
 
-import 'package:savessa/shared/widgets/app_button.dart';
-import 'package:savessa/shared/widgets/validated_text_field.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
-import 'package:savessa/services/validation/email_validator_service.dart';
-import 'package:savessa/services/validation/password_validator_service.dart';
 import 'package:savessa/shared/widgets/app_logo.dart';
+import 'package:savessa/shared/widgets/welcome_header.dart';
+import 'package:savessa/features/auth/presentation/components/role_indicator_component.dart';
+import 'package:savessa/features/auth/presentation/components/login_signup_toggle_component.dart';
+import 'package:savessa/features/auth/presentation/components/login_form_component.dart';
 import 'package:savessa/services/database/database_service.dart';
 import 'package:provider/provider.dart';
 import 'package:savessa/services/user/user_data_service.dart';
+import 'package:savessa/services/audit/audit_log_service.dart';
+import 'package:savessa/services/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? selectedRole;
+  final bool hideSignupOption;
   
   const LoginScreen({
     super.key,
     this.selectedRole,
+    this.hideSignupOption = false,
   });
 
   @override
@@ -41,6 +45,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   
   // Animation controller for field completion animations
   late AnimationController _animationController;
+
+  bool _emailExists = true;
 
   @override
   void initState() {
@@ -75,11 +81,38 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     });
     
-    _passwordFocus.addListener(() {
+    _passwordFocus.addListener(() async {
       if (_passwordFocus.hasFocus) {
         setState(() {
           _currentField = 'password';
         });
+        // On moving to password, pre-check if the user exists by email/phone.
+        final identifier = _emailController.text.trim();
+        if (identifier.isNotEmpty) {
+          try {
+            final db = DatabaseService();
+            final user = await db.getUserByEmailOrPhone(identifier);
+            _emailExists = user != null;
+            if (!_emailExists && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('No account found with that email or phone.'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
+          } catch (_) {
+            _emailExists = false;
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Could not verify account. Check your connection.'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
+          }
+        }
         if (_voiceGuidanceEnabled) {
           _playFieldGuidance('password');
         }
@@ -119,6 +152,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       return;
     }
 
+    // Capture context-derived objects BEFORE awaits to avoid using context after awaits
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final userSession = Provider.of<UserDataService>(context, listen: false);
+    final theme = Theme.of(context);
+    final authSvc = Provider.of<AuthService>(context, listen: false);
+
     setState(() {
       _isLoading = true;
     });
@@ -130,11 +170,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       final db = DatabaseService();
       final user = await db.getUserByEmailOrPhone(identifier);
       if (user == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        _emailExists = false;
+        messenger.showSnackBar(
           SnackBar(
             content: const Text('No account found with that email or phone.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: theme.colorScheme.error,
           ),
         );
         return;
@@ -143,45 +183,66 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       try {
         final verified = await db.verifyCredentials(identifier: identifier, password: password);
         if (verified == null) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: const Text('Invalid credentials. Please try again.'),
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: theme.colorScheme.error,
             ),
           );
           return;
         }
       } catch (e) {
-        if (!mounted) return;
         final msg = e.toString().contains('INVALID_PASSWORD') ? 'Incorrect password. Please try again.' : 'Authentication failed.';
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text(msg),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: theme.colorScheme.error,
           ),
         );
         return;
       }
 
-      if (!mounted) return;
-      final userSession = Provider.of<UserDataService>(context, listen: false);
-      userSession.setUser(user);
+      // Hydrate full user profile from DB and update session
+      Map<String, dynamic>? fullUser;
+      try {
+        final uid = user['id'];
+        if (uid != null) {
+          fullUser = await db.getUserById(uid.toString());
+        }
+      } catch (_) {}
+      final sessionUser = fullUser ?? user;
+      userSession.setUser(sessionUser);
+      // Inform AuthService of Postgres session so other parts relying on it (e.g., ProfileForm) work
+      try {
+        authSvc.setPostgresSessionFromDb(sessionUser);
+      } catch (_) {}
 
       final role = (user['role'] as String?) ?? 'member';
+      // Log audit: login_success (fire-and-forget, swallow errors)
+      try {
+        final uid = (user['id']?.toString()) ?? '';
+        await AuditLogService().logAction(
+          userId: uid,
+          action: 'login_success',
+          metadata: {
+            'identifier': identifier,
+            'role': role,
+          },
+        );
+      } catch (_) {}
+
+      // Navigate using captured router
       if (role == 'admin') {
-        context.go('/home/manager');
+        router.go('/home/manager');
       } else {
-        context.go('/home');
+        router.go('/home');
       }
     } catch (e) {
-      if (!mounted) return;
-      
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Show error message without using context after await
+      messenger.showSnackBar(
         SnackBar(
           content: Text('errors.auth_error'.tr()),
-          backgroundColor: Theme.of(context).colorScheme.error,
+          backgroundColor: theme.colorScheme.error,
         ),
       );
     } finally {
@@ -222,90 +283,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 const AppLogo(size: 100, glow: true, assetPath: 'assets/images/logo.png'),
                 const SizedBox(height: 24),
                 
-                // Header with glassmorphism effect
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Welcome Back',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedRole == 'admin'
-                            ? 'Logging in as Savings Manager'
-                            : 'Logging in as Savings Contributor',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                // Reusable welcome header
+                WelcomeHeader(
+                  title: 'Welcome Back',
+                  subtitle: _selectedRole == 'admin'
+                      ? 'Logging in as Savings Manager'
+                      : 'Logging in as Savings Contributor',
                 ),
                 
                 const SizedBox(height: 24),
                 
-                // Login/Register toggle - Link to register
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        spreadRadius: 0,
-                      ),
-                    ],
+                // Login/Register toggle - Reusable component (hidden when redirected after signup)
+                if (!widget.hideSignupOption)
+                  LoginSignupToggleComponent(
+                    mode: 'login',
+                    selectedRole: _selectedRole,
+                    useTabStyle: false,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'auth.no_account'.tr(),
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.go('/register');
-                        },
-                        child: Text(
-                          'auth.sign_up'.tr(),
-                          style: TextStyle(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 
                 const SizedBox(height: 16),
                 
@@ -353,44 +347,15 @@ decoration: BoxDecoration(
                   
                 const SizedBox(height: 16),
                 
-                // Role indication
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        IconMapping.person,
-                        color: theme.colorScheme.secondary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _selectedRole == 'admin'
-                              ? 'Logging in as Savings Manager'
-                              : 'Logging in as Savings Contributor',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                // Role indication - Reusable component
+                RoleIndicatorComponent(
+                  selectedRole: _selectedRole,
+                  prefix: 'Logging in as:',
                 ),
                 
                 const SizedBox(height: 32),
                   
-                // Form with glassmorphism container
+                // Reusable Login Form
                 Container(
                   padding: const EdgeInsets.all(24),
 decoration: BoxDecoration(
@@ -408,99 +373,14 @@ decoration: BoxDecoration(
                       width: 1,
                     ),
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Email field
-                        ValidatedTextField(
-                          label: 'auth.email'.tr(),
-                          controller: _emailController,
-                          focusNode: _emailFocus,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          prefixIcon: const Icon(IconMapping.email),
-                          required: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'errors.required_field'.tr();
-                            }
-                            
-                            // Use EmailValidatorService for better validation
-                            final emailValidator = EmailValidatorService();
-                            if (!emailValidator.isValidFormat(value)) {
-                              // Check if we can suggest a correction
-                              final suggestion = emailValidator.suggestCorrection(value);
-                              if (suggestion != null) {
-                                return 'Invalid email format. Did you mean $suggestion?';
-                              }
-                              return 'errors.invalid_email'.tr();
-                            }
-                            return null;
-                          },
-                          onFieldSubmitted: (_) {
-                            FocusScope.of(context).requestFocus(_passwordFocus);
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Password field
-                        ValidatedTextField(
-                          label: 'auth.password'.tr(),
-                          controller: _passwordController,
-                          focusNode: _passwordFocus,
-                          obscureText: true,
-                          textInputAction: TextInputAction.done,
-                          prefixIcon: const Icon(IconMapping.lock),
-                          required: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'errors.required_field'.tr();
-                            }
-                            
-                            final passwordValidator = PasswordValidatorService();
-                            final (isPolicyValid, policyError) = passwordValidator.validatePolicy(value);
-                            if (!isPolicyValid) {
-                              return policyError;
-                            }
-                            
-                            return null;
-                          },
-                          onFieldSubmitted: (_) {
-                            _login();
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        // Forgot password link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              context.go('/forgot-password');
-                            },
-                            child: Text(
-                              'auth.forgot_password'.tr(),
-                              style: TextStyle(
-                                color: theme.colorScheme.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Login button
-                        AppButton(
-                          label: 'auth.login'.tr(),
-                          onPressed: _login,
-                          type: ButtonType.primary,
-                          isFullWidth: true,
-                          height: 56,
-                          borderRadius: 12,
-                          isLoading: _isLoading,
-                        ),
-                      ],
-                    ),
+                  child: LoginFormComponent(
+                    formKey: _formKey,
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    emailFocus: _emailFocus,
+                    passwordFocus: _passwordFocus,
+                    onLogin: _login,
+                    isLoading: _isLoading,
                   ),
                 ),
                 

@@ -6,12 +6,18 @@ import 'package:intl_phone_field/countries.dart';
 import 'package:savessa/services/location_country_service.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/core/roles/role.dart';
 import 'package:savessa/shared/widgets/validated_text_field.dart';
 import 'package:savessa/features/auth/presentation/components/role_indicator_component.dart';
 import 'package:savessa/features/auth/presentation/components/login_signup_toggle_component.dart';
 import 'package:savessa/features/auth/presentation/components/login_form_component.dart';
 import 'package:savessa/features/auth/presentation/components/signup_form_component.dart';
 import 'package:savessa/shared/widgets/app_logo.dart';
+import 'package:savessa/services/database/database_service.dart';
+import 'package:provider/provider.dart';
+import 'package:savessa/services/user/user_data_service.dart';
+import 'package:savessa/services/auth/auth_service.dart';
+import 'package:savessa/services/audit/audit_log_service.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   final String? selectedRole;
@@ -400,103 +406,130 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
   void _login() async {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
-    
+
     // Validate form
     if (!_loginFormKey.currentState!.validate()) {
-      // Find the first field with an error and focus it
       if (_loginEmailController.text.isEmpty) {
         _loginEmailFocus.requestFocus();
-        return;
       } else if (_loginPasswordController.text.isEmpty) {
         _loginPasswordFocus.requestFocus();
-        return;
       }
       return;
     }
 
-    // Prevent multiple submissions
     if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // In a real app, we would use Firebase Auth or similar here
-      // For now, we'll just simulate a login
-      await Future.delayed(const Duration(seconds: 2));
-      
+      final identifier = _loginEmailController.text.trim();
+      final password = _loginPasswordController.text;
+
+      final db = DatabaseService();
+      // 1) Ensure account exists
+      final user = await db.getUserByEmailOrPhone(identifier);
+      if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No account found with that email or phone.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        _loginEmailFocus.requestFocus();
+        return;
+      }
+
+      // 2) Verify credentials
+      try {
+        final verified = await db.verifyCredentials(identifier: identifier, password: password);
+        if (verified == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Invalid credentials. Please try again.'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          _loginPasswordFocus.requestFocus();
+          return;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        final msg = e.toString().contains('INVALID_PASSWORD') ? 'Incorrect password. Please try again.' : 'Authentication failed.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        _loginPasswordFocus.requestFocus();
+        return;
+      }
+
+      // 3) Hydrate full user and set global session services so post-login screens are identical
+      Map<String, dynamic>? fullUser;
+      try {
+        final uid = user['id'];
+        if (uid != null) {
+          fullUser = await db.getUserById(uid.toString());
+        }
+      } catch (_) {}
+      final sessionUser = fullUser ?? user;
+      try {
+        // Update global session for reuse everywhere
+        Provider.of<UserDataService>(context, listen: false).setUser(sessionUser);
+        Provider.of<AuthService>(context, listen: false).setPostgresSessionFromDb(sessionUser);
+      } catch (_) {}
+
+      // 4) Audit: login_success
+      try {
+        await AuditLogService().logAction(
+          userId: (sessionUser['id']?.toString()) ?? 'unknown',
+          action: 'login_success',
+          metadata: {'identifier': identifier, 'role': (sessionUser['role'] ?? 'member').toString()},
+        );
+      } catch (_) {}
+
       if (!mounted) return;
-      
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      
-      // Navigate to home screen
-      context.go('/home');
+      // Navigate role-aware to the exact same routes as non-redirected login
+      final role = (sessionUser['role'] as String?) ?? 'member';
+      context.go(role == 'admin' ? '/home/manager' : '/home');
     } catch (e) {
       if (!mounted) return;
-      
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login error: ${e.toString()}'),
+          content: Text('Login error. Please try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
-          duration: const Duration(seconds: 3),
         ),
       );
-      
-      // Reset loading state
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Focus on email field for retry
-      _loginEmailFocus.requestFocus();
     } finally {
-      if (mounted && _isLoading) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
-  
+
   // Submit signup form and navigate to dashboard
   void _signup() async {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
-    
+
     // First check if the form is valid using standard validation
     if (!_signupFormKey.currentState!.validate()) {
-      // Find the first field with an error and focus it
       if (_firstNameController.text.isEmpty) {
         _firstNameFocus.requestFocus();
-        return;
       } else if (_lastNameController.text.isEmpty) {
         _lastNameFocus.requestFocus();
-        return;
       } else if (_contactController.text.isEmpty) {
         _contactFocus.requestFocus();
-        return;
       } else if (_passwordController.text.isEmpty) {
         _passwordFocus.requestFocus();
-        return;
       } else if (_confirmPasswordController.text.isEmpty) {
         _confirmPasswordFocus.requestFocus();
-        return;
       }
       return;
     }
-    
+
     // Then check if all fields with async validation are valid
     if (_emailValidationStatus != ValidationStatus.valid) {
-      // Trigger email validation if not already valid
       _contactFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -507,9 +540,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       );
       return;
     }
-    
     if (_passwordValidationStatus != ValidationStatus.valid) {
-      // Trigger password validation if not already valid
       _passwordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -520,9 +551,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       );
       return;
     }
-    
     if (_confirmPasswordValidationStatus != ValidationStatus.valid) {
-      // Trigger confirm password validation if not already valid
       _confirmPasswordFocus.requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -534,56 +563,57 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       return;
     }
 
-    // Prevent multiple submissions
     if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // In a real app, we would use Firebase Auth or similar here
-      // For now, we'll just simulate account creation
-      await Future.delayed(const Duration(seconds: 2));
-      
+      final db = DatabaseService();
+      final firstName = _firstNameController.text.trim();
+      final middleName = _middleNameController.text.trim();
+      final lastName = _lastNameController.text.trim();
+      final email = _contactController.text.trim();
+      final phone = _phoneController.text.trim();
+      final password = _passwordController.text;
+
+      await db.createUser({
+        'first_name': firstName,
+        'last_name': lastName,
+        'other_names': middleName,
+        'email': email,
+        'phone': phone,
+'role': RoleX.normalizeLabel(_selectedRole),
+        'password': password,
+      });
+
       if (!mounted) return;
-      
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Account created successfully!'),
+          content: Text('Account created successfully! Please sign in.'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );
-      
-      // Navigate to home screen
-      context.go('/home');
+      // After signup, direct user to login for explicit authentication
+      context.go('/login');
     } catch (e) {
       if (!mounted) return;
-      
-      // Show error message
+      String message = 'Registration error. Please try again.';
+      final txt = e.toString();
+      if (txt.contains('EMAIL_EXISTS')) {
+        message = 'Email already registered. Please use a different email.';
+      } else if (txt.contains('PHONE_EXISTS')) {
+        message = 'Phone number already registered. Please use a different phone.';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Registration error: ${e.toString()}'),
+          content: Text(message),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
       );
-      
-      // Reset loading state
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Focus on the first field for retry
       _firstNameFocus.requestFocus();
     } finally {
-      if (mounted && _isLoading) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
   
@@ -653,12 +683,10 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          _isLoginMode 
-                              ? 'Sign in to continue to Savessa' 
-                              : 'Let\'s set up your Savessa account',
+const Text(
+                          'Sign in to continue to Savessa',
                           style: TextStyle(
-                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                            color: Colors.white70,
                             fontSize: 16,
                           ),
                           textAlign: TextAlign.center,
@@ -670,7 +698,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 24),
                   
                   // Login/Signup toggle
-                  LoginSignupToggleComponent(
+      LoginSignupToggleComponent(
                     mode: _isLoginMode ? 'login' : 'signup',
                     onToggle: _toggleMode,
                     useTabStyle: true,
@@ -679,7 +707,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 16),
                   
                   // Voice guidance toggle with improved styling
-                  Container(
+Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
@@ -723,7 +751,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
                   const SizedBox(height: 16),
                   
                   // Auto-detect Country toggle
-                  Container(
+Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
