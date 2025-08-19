@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:postgres/postgres.dart';
 import 'package:savessa/core/config/env_config.dart';
+import 'package:savessa/services/security/security_service.dart' as pwsec;
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -36,8 +37,30 @@ class DatabaseService {
   }
 
   Future<void> connect() async {
+    // If we think we're connected but the underlying connection is closed, reset.
+    try {
+      // ignore: invalid_use_of_visible_for_testing_member
+      if (_isConnected && _connection.isClosed) {
+        _isConnected = false;
+      }
+    } catch (_) {
+      // If checking state fails, force re-init
+      _isConnected = false;
+    }
+
     if (!_isConnected) {
       try {
+        // If connection object was closed, recreate it
+        try {
+          // ignore: invalid_use_of_visible_for_testing_member
+          if (_connection.isClosed) {
+            _initConnection();
+          }
+        } catch (_) {
+          // If _connection is not usable, re-init
+          _initConnection();
+        }
+
         await _connection.open();
         _isConnected = true;
         debugPrint('Connected to PostgreSQL database');
@@ -57,6 +80,7 @@ class DatabaseService {
   }
 
   Future<List<Map<String, dynamic>>> query(String sql, [Map<String, dynamic>? parameters]) async {
+    debugPrint('DB QUERY SQL: ${sql.split('\n').first}');
     if (!_isConnected) {
       await connect();
     }
@@ -71,6 +95,7 @@ class DatabaseService {
   }
 
   Future<int> execute(String sql, [Map<String, dynamic>? parameters]) async {
+    debugPrint('DB EXECUTE SQL: ${sql.split('\n').first}');
     if (!_isConnected) {
       await connect();
     }
@@ -92,7 +117,7 @@ class DatabaseService {
     return results.isNotEmpty ? results.first : null;
   }
 
-  Future<Map<String, dynamic>?> getUserById(int userId) async {
+  Future<Map<String, dynamic>?> getUserById(String userId) async {
     final results = await query(
       'SELECT id, first_name, last_name, other_names, email, phone, role, profile_image_url FROM users WHERE id = @id LIMIT 1',
       {'id': userId},
@@ -101,11 +126,12 @@ class DatabaseService {
   }
 
   Future<void> updateUserProfile({
-    required int userId,
+    required String userId,
     String? firstName,
     String? lastName,
     String? otherNames,
     String? phone,
+    String? email,
     String? profileImageUrl,
   }) async {
     final fields = <String, String>{};
@@ -125,6 +151,10 @@ class DatabaseService {
     if (phone != null) {
       fields['phone'] = '@phone';
       params['phone'] = phone;
+    }
+    if (email != null) {
+      fields['email'] = '@email';
+      params['email'] = email;
     }
     if (profileImageUrl != null) {
       fields['profile_image_url'] = '@profile_image_url';
@@ -181,7 +211,7 @@ class DatabaseService {
         'email': userData['email'],
         'phone': userData['phone'],
         'role': userData['role'],
-        'password_hash': userData['password'], // In a real app, this would be hashed
+        'password_hash': pwsec.SecurityService.hashPassword(userData['password'] as String),
       },
     );
   }
@@ -189,9 +219,10 @@ class DatabaseService {
   Future<Map<String, dynamic>?> verifyCredentials({required String identifier, required String password}) async {
     final user = await getUserByEmailOrPhone(identifier);
     if (user == null) return null;
-    // NOTE: In production use a proper password hash verification.
+    // Verify password using salted hash
     final stored = (user['password_hash'] ?? '').toString();
-    if (stored == password) return user;
+    final ok = pwsec.SecurityService.verifyPassword(password, stored);
+    if (ok) return user;
     throw Exception('INVALID_PASSWORD');
   }
 
@@ -235,6 +266,15 @@ class DatabaseService {
       {'uid': firebaseUid},
     );
     return rows.isNotEmpty ? rows.first : null;
+  }
+
+  // Audit logs
+  Future<List<Map<String, dynamic>>> getAuditLogs({required String userId, int limit = 100}) async {
+    final rows = await query(
+      'SELECT action, target_type, target_id, metadata, ip, created_at FROM admin_audit_log WHERE user_id = @uid ORDER BY created_at DESC LIMIT @lim',
+      {'uid': userId, 'lim': limit},
+    );
+    return rows;
   }
 
   // Add more methods for other database operations as needed
