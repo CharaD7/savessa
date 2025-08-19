@@ -21,6 +21,8 @@ import 'package:savessa/core/theme/theme_demo.dart';
 import 'package:savessa/features/security/presentation/screens/two_factor_screen.dart';
 import 'package:savessa/features/security/presentation/screens/totp_setup_screen.dart';
 import 'package:savessa/features/security/presentation/screens/otp_verify_screen.dart';
+import 'package:savessa/features/analytics/presentation/screens/analytics_screen.dart';
+import 'package:savessa/features/settings/presentation/screens/audit_log_screen.dart';
 // import '../../features/savings/presentation/screens/savings_screen.dart';
 // etc.
 
@@ -95,7 +97,18 @@ class AppRouter {
       // Authentication routes
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          String? role;
+          bool hideSignup = false;
+          if (extra is String) {
+            role = extra;
+          } else if (extra is Map<String, dynamic>) {
+            role = extra['role'] as String?;
+            hideSignup = (extra['hideSignup'] as bool?) ?? false;
+          }
+          return LoginScreen(selectedRole: role, hideSignupOption: hideSignup);
+        },
       ),
       GoRoute(
         path: '/register',
@@ -170,7 +183,22 @@ class AppRouter {
               ),
               GoRoute(
                 path: 'join',
-                builder: (context, state) => const JoinGroupScreen(),
+                builder: (context, state) {
+                  // Guard: only contributors can join
+                  try {
+                    final role = Provider.of<UserDataService>(context, listen: false).role;
+                    if (role == 'admin') {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Savings Managers cannot join groups.')),
+                        );
+                        GoRouter.of(context).go('/groups');
+                      });
+                      return const PlaceholderScreen(title: 'Groups');
+                    }
+                  } catch (_) {}
+                  return const JoinGroupScreen();
+                },
               ),
               GoRoute(
                 path: ':groupId',
@@ -185,7 +213,7 @@ class AppRouter {
           // Analytics
           GoRoute(
             path: '/analytics',
-            builder: (context, state) => const PlaceholderScreen(title: 'Analytics'),
+            builder: (context, state) => const AnalyticsScreen(),
           ),
           
           // Profile
@@ -213,14 +241,18 @@ class AppRouter {
       ),
       
       // Settings
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
           GoRoute(
-            path: 'theme',
-            builder: (context, state) => const ThemeDemoScreen(),
-          ),
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'theme',
+                builder: (context, state) => const ThemeDemoScreen(),
+              ),
+              GoRoute(
+                path: 'audit',
+                builder: (context, state) => const AuditLogScreen(),
+              ),
           GoRoute(
             path: 'two-factor',
             builder: (context, state) => const TwoFactorScreen(),

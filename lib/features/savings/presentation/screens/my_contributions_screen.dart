@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:savessa/shared/widgets/screen_scaffold.dart';
 import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/services/auth/auth_service.dart';
 import 'package:savessa/services/groups/active_group_service.dart';
@@ -53,11 +55,9 @@ class _MyContributionsScreenState extends State<MyContributionsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('My Contributions'),
-      ),
+    return ScreenScaffold(
+      title: 'My Contributions',
+      showBackHomeFab: true,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -89,10 +89,7 @@ appBar: AppBar(
                                 onPressed: () {
                                   final remaining = (_required - _thisMonth);
                                   final suggested = remaining > 0 ? remaining : 0;
-                                  Navigator.of(context).pushNamed(
-                                    '/savings/add',
-                                    arguments: {'amount': suggested.toStringAsFixed(2)},
-                                  );
+                                  context.go('/savings/add', extra: {'amount': suggested.toStringAsFixed(2)});
                                 },
                                 child: const Text('Contribute remaining'),
                               ),

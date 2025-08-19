@@ -30,17 +30,20 @@ class _SplashScreenState extends State<SplashScreen> {
         children: [
           // Animated petal ripple background (lightweight CustomPainter)
           Positioned.fill(
-            child: Transform.translate(
-              offset: const Offset(0, -40), // move background up by 40px total
-              child: const PetalRippleBackground(centerAlignment: Alignment(0.0, -0.12)),
-            ),
+            child: const PetalRippleBackground(centerAlignment: Alignment.center),
           ),
-          // Foreground content
-          SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          // Foreground content (force full-bleed and strip any system paddings)
+          MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            removeBottom: true,
+            child: MediaQuery.removeViewInsets(
+              context: context,
+              removeBottom: true,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   // App logo with faint pulsing glow and subtle zoom
                   const AppLogo(
                     size: 180,
@@ -79,9 +82,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  
                   const SizedBox(height: 48),
                 ],
+                ),
               ),
             ),
           ),

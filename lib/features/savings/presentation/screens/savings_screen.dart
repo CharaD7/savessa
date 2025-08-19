@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/services/auth/auth_service.dart';
@@ -101,7 +102,7 @@ appBar: AppBar(
         title: const Text('Savings'),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed('/savings/add'),
+        onPressed: () => context.go('/savings/add'),
         icon: const Icon(IconMapping.addCircle),
         label: const Text('Add'),
       ),
@@ -156,7 +157,7 @@ appBar: AppBar(
                       Text('History', style: theme.textTheme.titleLarge),
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pushNamed('/savings/my');
+                          context.go('/savings/my');
                         },
                         child: const Text('My contributions'),
                       ),

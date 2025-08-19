@@ -8,6 +8,8 @@ import 'package:savessa/services/audit/audit_log_service.dart';
 import 'package:savessa/features/security/services/security_prefs_service.dart';
 import 'package:savessa/features/security/services/biometric_service.dart';
 
+import 'package:savessa/shared/widgets/screen_scaffold.dart';
+
 class TwoFactorScreen extends StatefulWidget {
   const TwoFactorScreen({super.key});
 
@@ -106,11 +108,9 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Two-Factor Authentication'),
-      ),
+    return ScreenScaffold(
+      title: 'Two-Factor Authentication',
+      showBackHomeFab: true,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

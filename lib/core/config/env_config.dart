@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// A service that provides access to environment variables.
@@ -15,7 +16,16 @@ class EnvConfig {
   EnvConfig._internal();
   
   // Database configuration
-  String get dbHost => dotenv.env['DB_HOST'] ?? '';
+  String get dbHostRaw => dotenv.env['DB_HOST'] ?? '';
+  String get dbHostResolved {
+    final raw = dbHostRaw.trim();
+    // On Android emulator, localhost should be 10.0.2.2 to reach the host machine.
+    if (Platform.isAndroid && (raw == 'localhost' || raw == '127.0.0.1' || raw.isEmpty)) {
+      return '10.0.2.2';
+    }
+    return raw;
+  }
+  String get dbHost => dbHostResolved;
   String get dbPort => dotenv.env['DB_PORT'] ?? '5432';
   String get dbName => dotenv.env['DB_NAME'] ?? '';
   String get dbUser => dotenv.env['DB_USER'] ?? '';

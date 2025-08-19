@@ -19,6 +19,8 @@ import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:savessa/shared/widgets/app_logo.dart';
+import 'package:savessa/shared/widgets/welcome_header.dart';
+import 'package:savessa/core/roles/role.dart';
 
 class RegisterScreen extends StatefulWidget {
   // Optional override for detection in tests
@@ -366,13 +368,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         'phone': _completePhoneNumber, // Use complete phone number with country code
         'country_code': _countryCode, // Store country code separately
         'phone_country': _selectedCountry.code.toString(), // Store country code (e.g., 'US', 'GH')
-        'role': _selectedRole,
+'role': RoleX.normalizeLabel(_selectedRole),
         'password': _passwordController.text, // In a real app, this would be hashed
         'email_verified': true, // Mark as verified since we've verified it
       };
       
       // Use the DatabaseService to create a new user
       final dbService = DatabaseService();
+      await dbService.connect();
       
       // Check if user with this email already exists
       // This is a double-check since we already validated the email
@@ -402,15 +405,24 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         ),
       );
       
-      // Navigate to login screen with selected role
-      context.go('/login', extra: _selectedRole);
+      // Navigate to login screen with selected role and hide sign-up option on arrival
+      context.go('/login', extra: {'role': _selectedRole, 'hideSignup': true});
     } catch (e) {
       if (!mounted) return;
       
-      // Show error message
+      // Map database exceptions to friendly messages
+      final err = e.toString();
+      String msg = 'Registration failed. Please try again.';
+      if (err.contains('EMAIL_EXISTS')) {
+        msg = 'Email already registered. Please use a different email.';
+      } else if (err.contains('PHONE_EXISTS')) {
+        msg = 'Phone number already registered. Please use a different phone number.';
+      }
+      
+      // Show error message and do NOT authenticate
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Registration error: ${e.toString()}'),
+          content: Text(msg),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -451,47 +463,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 const AppLogo(size: 100, glow: true, assetPath: 'assets/images/logo.png'),
                 const SizedBox(height: 24),
                 
-                // Header with glassmorphism effect
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Create Account',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.selectedRole == 'admin' 
-                            ? 'Setting up as Savings Manager' 
-                            : 'Setting up as Savings Contributor',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                // Reusable welcome header
+                WelcomeHeader(
+                  title: 'Create Account',
+                  subtitle: widget.selectedRole == 'admin'
+                      ? 'Setting up as Savings Manager'
+                      : 'Setting up as Savings Contributor',
                 ),
                 
                 const SizedBox(height: 24),

@@ -17,6 +17,7 @@ import 'services/sync/queue_store.dart';
 import 'services/sync/sync_service.dart';
 import 'features/security/services/security_prefs_service.dart';
 import 'services/user/user_data_service.dart';
+import 'services/groups/active_group_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -104,6 +105,9 @@ class _MyAppState extends State<MyApp> {
             return SyncService(qs);
           },
           dispose: (_, s) => s.dispose(),
+        ),
+        ChangeNotifierProvider<ActiveGroupService>(
+          create: (_) => ActiveGroupService(),
         ),
       ],
       child: Consumer<ThemeProvider>(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:savessa/shared/widgets/screen_scaffold.dart';
 
 import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/shared/widgets/app_button.dart';
@@ -114,11 +115,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Scaffold(
-appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: Text('home.title'.tr()),
-        actions: [
+    return ScreenScaffold(
+      title: 'home.title'.tr(),
+      actions: [
           // Sync status chip
           Builder(builder: (context) {
             return Padding(
@@ -138,8 +137,7 @@ appBar: AppBar(
               context.go('/settings');
             },
           ),
-        ],
-      ),
+],
       body: Stack(
         children: [
           // Main content
@@ -266,11 +264,31 @@ style: theme.textTheme.bodySmall?.copyWith(
               Row(
                 children: [
                   Expanded(
-                    child: _buildQuickActionCard(
-                      context,
-                      IconMapping.groupAdd,
-                      'home.join_group'.tr(),
-                      () => context.go('/groups'),
+                    child: Builder(
+                      builder: (context) {
+                        final role = context.read<UserDataService>().role;
+                        final disabled = role == 'admin';
+                        return Opacity(
+                          opacity: disabled ? 0.5 : 1.0,
+                          child: _buildQuickActionCard(
+                            context,
+                            IconMapping.groupAdd,
+                            'home.join_group'.tr(),
+                            () {
+                              if (disabled) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Savings Managers cannot join groups. You can create and manage groups.'),
+                                    backgroundColor: Theme.of(context).colorScheme.error,
+                                  ),
+                                );
+                                return;
+                              }
+                              context.go('/groups');
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),

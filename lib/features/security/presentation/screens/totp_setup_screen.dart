@@ -6,6 +6,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:savessa/services/auth/auth_service.dart';
 import 'package:savessa/features/security/services/security_service.dart';
 
+import 'package:savessa/shared/widgets/screen_scaffold.dart';
+
 class TotpSetupScreen extends StatefulWidget {
   const TotpSetupScreen({super.key});
 
@@ -85,11 +87,9 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Set up Authenticator (TOTP)'),
-      ),
+    return ScreenScaffold(
+      title: 'Set up Authenticator (TOTP)',
+      showBackHomeFab: true,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

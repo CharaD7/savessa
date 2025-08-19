@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:savessa/services/database/database_service.dart';
 
 class AuditLogService {
@@ -14,10 +13,11 @@ class AuditLogService {
   }) async {
     try {
       final ip = await _getPublicIp();
+      final uidInt = int.tryParse(userId);
       await _db.execute(
         'INSERT INTO admin_audit_log (user_id, action, target_type, target_id, metadata, ip) VALUES (@uid, @a, @tt, @tid, @meta::jsonb, @ip)',
         {
-          'uid': userId,
+          'uid': uidInt ?? userId,
           'a': action,
           'tt': targetType,
           'tid': targetId,
@@ -31,10 +31,7 @@ class AuditLogService {
   }
 
   Future<String> _getPublicIp() async {
-    try {
-      final r = await http.get(Uri.parse('https://api.ipify.org?format=text'));
-      if (r.statusCode == 200) return r.body.trim();
-    } catch (_) {}
+    // Avoid network dependency; return placeholder. If server adds IP via RLS, remove this field entirely.
     return '0.0.0.0';
   }
 }

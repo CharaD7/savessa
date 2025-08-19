@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:savessa/shared/widgets/screen_scaffold.dart';
+import 'package:savessa/core/roles/role.dart';
+import 'package:savessa/core/roles/role_gate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/services/auth/auth_service.dart';
 import 'package:savessa/services/groups/group_service.dart';
@@ -37,23 +41,24 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Groups'),
-        actions: [
-          IconButton(
-            tooltip: 'Join group',
-            icon: const Icon(IconMapping.groupAdd),
-            onPressed: () => Navigator.of(context).pushNamed('/groups/join'),
-          ),
-          IconButton(
+    return ScreenScaffold(
+      title: 'Groups',
+      actions: [
+        IconButton(
+          tooltip: 'Join group',
+          icon: const Icon(IconMapping.groupAdd),
+          onPressed: () => context.go('/groups/join'),
+        ),
+        RoleGate(
+          allow: const [Role.admin],
+          fallback: const SizedBox.shrink(),
+          child: IconButton(
             tooltip: 'Create group',
             icon: const Icon(IconMapping.addBox),
-            onPressed: () => Navigator.of(context).pushNamed('/groups/create'),
+            onPressed: () => context.go('/groups/create'),
           ),
-        ],
-      ),
+        ),
+      ],
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_groups.isEmpty)
@@ -69,14 +74,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       trailing: const Icon(IconMapping.chevronRight),
                       onTap: () {
                         // Navigate to details placeholder
-                        Navigator.of(context).pushNamed('/groups/${g['id']}');
+                        context.go('/groups/${g['id']}');
                       },
                     );
                   },
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemCount: _groups.length,
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floating: FloatingActionButton.extended(
         onPressed: _load,
         icon: const Icon(Icons.refresh),
         label: const Text('Refresh'),
