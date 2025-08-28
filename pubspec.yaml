@@ -63,6 +63,9 @@ flutter:
     - assets/translations/
     - assets/images/
     - assets/animations/
+    - assets/animations/splash_morph_sequence.json
+    - assets/animations/splash_text_reveal.json
+    - assets/animations/splash_particles_background.json
     - assets/icons/
     - assets/icons/flags/
     - assets/icons/svg/
