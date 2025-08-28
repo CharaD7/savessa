@@ -5,7 +5,9 @@ This directory contains Lottie animation files for the Savessa app.
 ## Required Animations
 
 ### Splash Screen
-- `splash_logo_animation.json` - A soft bounce or shimmer animation of the Savessa logo with gold accents on a purple background.
+- `splash_morph_sequence.json` - Ultra-modern morphing animation with geometric shapes (circles, triangles, hexagons) that transform into the Savessa logo with smooth easing curves.
+- `splash_text_reveal.json` - Kinetic typography animation for "Savessa" with character-by-character reveal, bounce effects, and gold shimmer sweep.
+- `splash_particles_background.json` - Dynamic particle system background with floating particles, subtle movement patterns, and gradient colors in purple and gold tones.
 
 ### Language Selection
 - `language_selection_hover.json` - Hover animation for language selection cards.
