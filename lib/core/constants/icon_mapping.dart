@@ -65,4 +65,11 @@ class IconMapping {
   static const IconData volumeOff = FeatherIcons.volumeX; // Speaker with mute
   static const IconData speaker = FeatherIcons.volume2; // Alias for volumeUp
   static const IconData speaker2 = FeatherIcons.volume2; // Speaker-2 icon for Voice Guidance
+  
+  // Additional icons for Enhanced Home Screen
+  static const IconData refresh = FeatherIcons.refreshCw;
+  static const IconData target = FeatherIcons.target;
+  static const IconData analytics = FeatherIcons.barChart;
+  static const IconData security = FeatherIcons.shield;
+  static const IconData count = FeatherIcons.hash;
 }

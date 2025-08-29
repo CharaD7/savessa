@@ -15,6 +15,7 @@ import 'package:savessa/features/auth/presentation/screens/login_screen.dart';
 import 'package:savessa/features/auth/presentation/screens/register_screen.dart';
 import 'package:savessa/features/home/presentation/screens/home_screen.dart';
 import 'package:savessa/features/home/presentation/screens/manager_home_screen.dart';
+import 'package:savessa/features/home/presentation/screens/enhanced_home_screen.dart';
 import 'package:savessa/features/settings/presentation/screens/settings_screen.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/theme_demo.dart';
@@ -139,6 +140,11 @@ class AppRouter {
           GoRoute(
             path: '/home/manager',
             builder: (context, state) => const ManagerHomeScreen(),
+          ),
+          // Enhanced Home Screen (for testing new models/repositories)
+          GoRoute(
+            path: '/home/enhanced',
+            builder: (context, state) => const EnhancedHomeScreen(),
           ),
           
           // Savings
