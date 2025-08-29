@@ -19,6 +19,7 @@
 - [Technology Stack](#-technology-stack)
 - [Architecture](#-architecture)
 - [Getting Started](#-getting-started)
+- [Firebase Configuration](#-firebase-configuration)
 - [Payment Integration](#-payment-integration)
 - [Blockchain Features](#-blockchain-features)
 - [UI/UX Design](#-uiux-design)
@@ -161,9 +162,9 @@ Depending on which platform you're targeting, you'll need additional build tools
 
 3. Configure Firebase:
    - Create a Firebase project
-   - Add Android and iOS apps to your Firebase project
+   - Add Android and iOS apps to your Firebase project  
    - Download and add the configuration files
-   - Follow the Firebase setup instructions
+   - **Configure Environment Variables**: Copy `.env.example` to `.env` and update with your Firebase credentials (see [Firebase Configuration](#-firebase-configuration) below)
 
 4. Configure Algorand:
    - Set up Algorand development environment
@@ -173,6 +174,116 @@ Depending on which platform you're targeting, you'll need additional build tools
    ```bash
    flutter run
    ```
+
+## 🔥 Firebase Configuration
+
+Savessa uses environment variables to store Firebase credentials securely. This approach improves security by keeping sensitive information out of version control and allows for different configurations across development, staging, and production environments.
+
+### Setting Up Environment Variables
+
+1. **Copy the example file**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Get your Firebase credentials**:
+   - Go to the [Firebase Console](https://console.firebase.google.com/)
+   - Select your project
+   - Navigate to **Project Settings** (gear icon)
+   - Scroll down to the **"Your apps"** section
+   - For each platform (Web, Android, iOS, etc.), copy the respective configuration values
+
+3. **Update your `.env` file** with the actual values:
+
+```env
+# Firebase Configuration
+# Shared across all platforms
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+
+# Platform-specific API Keys
+FIREBASE_WEB_API_KEY=your-web-api-key
+FIREBASE_ANDROID_API_KEY=your-android-api-key
+FIREBASE_IOS_API_KEY=your-ios-api-key
+FIREBASE_MACOS_API_KEY=your-macos-api-key
+FIREBASE_WINDOWS_API_KEY=your-windows-api-key
+
+# Platform-specific App IDs
+FIREBASE_WEB_APP_ID=1:123456789:web:abcdef123456
+FIREBASE_ANDROID_APP_ID=1:123456789:android:abcdef123456
+FIREBASE_IOS_APP_ID=1:123456789:ios:abcdef123456
+FIREBASE_MACOS_APP_ID=1:123456789:ios:abcdef123456  # Usually same as iOS
+FIREBASE_WINDOWS_APP_ID=1:123456789:web:abcdef123456
+
+# Web-specific configuration
+FIREBASE_WEB_AUTH_DOMAIN=your-project-id.firebaseapp.com
+FIREBASE_WEB_MEASUREMENT_ID=G-XXXXXXXXXX
+
+# Windows-specific configuration
+FIREBASE_WINDOWS_AUTH_DOMAIN=your-project-id.firebaseapp.com
+FIREBASE_WINDOWS_MEASUREMENT_ID=G-YYYYYYYYYY
+
+# iOS/macOS-specific configuration
+FIREBASE_IOS_BUNDLE_ID=com.your-company.savessa
+```
+
+### Where to Find Each Value
+
+#### From Firebase Console > Project Settings > Your Apps:
+
+**Web App Configuration:**
+- `FIREBASE_WEB_API_KEY` → `apiKey`
+- `FIREBASE_WEB_APP_ID` → `appId`
+- `FIREBASE_WEB_AUTH_DOMAIN` → `authDomain`
+- `FIREBASE_WEB_MEASUREMENT_ID` → `measurementId`
+
+**Android App Configuration:**
+- `FIREBASE_ANDROID_API_KEY` → From `google-services.json` → `client[0].api_key[0].current_key`
+- `FIREBASE_ANDROID_APP_ID` → From `google-services.json` → `client[0].client_info.mobilesdk_app_id`
+
+**iOS App Configuration:**
+- `FIREBASE_IOS_API_KEY` → From `GoogleService-Info.plist` → `API_KEY`
+- `FIREBASE_IOS_APP_ID` → From `GoogleService-Info.plist` → `GOOGLE_APP_ID`
+- `FIREBASE_IOS_BUNDLE_ID` → From `GoogleService-Info.plist` → `BUNDLE_ID`
+
+**Shared Values:**
+- `FIREBASE_PROJECT_ID` → Project ID (same across all platforms)
+- `FIREBASE_MESSAGING_SENDER_ID` → Sender ID (same across all platforms)
+- `FIREBASE_STORAGE_BUCKET` → Storage bucket (same across all platforms)
+
+### Environment File Security
+
+- ✅ **DO**: Keep `.env` file in your local development environment only
+- ✅ **DO**: Use different `.env` files for different environments (dev, staging, prod)
+- ✅ **DO**: Add `.env` to your `.gitignore` file (already done in this project)
+- ❌ **DON'T**: Commit `.env` files to version control
+- ❌ **DON'T**: Share `.env` files via email or messaging
+- ❌ **DON'T**: Include real credentials in screenshots or documentation
+
+### Validation
+
+The app automatically validates your Firebase configuration on startup:
+
+- ✅ **Success**: "Firebase environment configuration validated successfully"
+- ❌ **Error**: Detailed error message showing which variables are missing or invalid
+
+### Multiple Environments
+
+For different environments, create separate `.env` files:
+
+```bash
+.env.development    # Local development
+.env.staging        # Staging environment
+.env.production     # Production environment
+```
+
+Then load the appropriate file:
+
+```dart
+// In main.dart, you can conditionally load different env files
+await dotenv.load(fileName: '.env.${Environment.current}');
+```
 
 ## 💳 Payment Integration
 
