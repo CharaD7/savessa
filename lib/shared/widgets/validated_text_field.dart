@@ -447,7 +447,7 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         if (widget.showClearButton && _controller.text.isNotEmpty && widget.enabled && !widget.readOnly) {
           final clearBtn = IconButton(
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
             visualDensity: VisualDensity.compact,
             icon: Icon(IconMapping.clear, size: 20, color: Colors.white.withValues(alpha: 0.9)),
             onPressed: () {
@@ -462,27 +462,21 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
           suffixIcons.add(clearBtn);
         }
         if (widget.showPasswordToggle) {
-          final eyeWidget = Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Transform.translate(
-              offset: const Offset(-2, 0),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
-                  size: 20,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-                splashRadius: 18,
-              ),
+          final eyeWidget = IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              _obscureText ? IconMapping.visibilityOff : IconMapping.visibility,
+              size: 20,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+            splashRadius: 18,
           );
           eyeRef = eyeWidget;
           suffixIcons.add(eyeWidget);
@@ -514,13 +508,16 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         final prevIsClearCurrIsValidation = identical(prev, clearRef) && identical(current, validationRef);
 
         if (isPassword) {
-          // Password fields: make validation/clear closer to the eye by removing the gap before the eye
-          if (currIsEye) {
-            gap = 0; // no space before the eye icon
-          } else if (prevIsClear) {
-            gap = 0; // no space after clear
-          } else if (currIsClear) {
+          // Password fields: maintain consistent spacing between clear icon and both validation/eye icons
+          if (currIsClear) {
             gap = 0; // no space before clear
+          } else if (prevIsClear) {
+            // Keep consistent spacing after clear icon (same as validation icons)
+            // Account for the -2px transform on eye icon by adding extra space
+gap = 2; // consistent spacing after clear icon
+          } else if (currIsEye && !prevIsClear) {
+            // Only remove space before eye if not following clear icon
+            gap = 0;
           }
         } else if (prevIsClearCurrIsValidation) {
           // Email field: remove gap between clear and validation to bring them closer
