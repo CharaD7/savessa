@@ -18,6 +18,7 @@ import 'services/sync/sync_service.dart';
 import 'features/security/services/security_prefs_service.dart';
 import 'services/user/user_data_service.dart';
 import 'services/groups/active_group_service.dart';
+import 'core/config/env_config.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -31,7 +32,27 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Load environment variables
-  await dotenv.load(fileName: '.env');
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('Failed to load .env file: $e');
+    debugPrint('Make sure you have a .env file in the root of your project.');
+    // Continue execution with empty environment - EnvConfig will use defaults
+  }
+  
+  // Validate Firebase environment configuration
+  try {
+    final envConfig = EnvConfig();
+    envConfig.validateFirebaseConfig();
+    debugPrint('Firebase environment configuration validated successfully');
+  } catch (e) {
+    debugPrint('Firebase configuration validation failed: $e');
+    // In development, we might want to continue anyway with a warning
+    // In production, you might want to throw/exit here
+    if (EnvConfig().isProduction) {
+      throw StateError('Invalid Firebase configuration in production environment: $e');
+    }
+  }
   
   // Initialize EasyLocalization
   await EasyLocalization.ensureInitialized();
@@ -45,6 +66,12 @@ void main() async {
     debugPrint('Firebase initialized successfully');
   } catch (e) {
     debugPrint('Failed to initialize Firebase: $e');
+    debugPrint('Check your Firebase configuration in the .env file');
+    // In development, continue without Firebase
+    // In production, you might want to throw/exit here
+    if (EnvConfig().isProduction) {
+      rethrow;
+    }
   }
   
   // Set preferred orientations
