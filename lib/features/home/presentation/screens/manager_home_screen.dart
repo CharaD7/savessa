@@ -21,6 +21,7 @@ import 'package:savessa/features/security/services/security_prefs_service.dart';
 import 'package:savessa/features/manager/services/contract_service_mock.dart';
 import 'package:go_router/go_router.dart';
 import 'package:savessa/services/user/user_data_service.dart';
+import 'package:savessa/shared/widgets/profile_avatar.dart';
 
 class ManagerHomeScreen extends StatefulWidget {
   const ManagerHomeScreen({super.key});
@@ -173,23 +174,29 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
 
     return Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: Navigator.of(context).canPop(),
-          // Simplified title per request
-          title: const Text('Home'),
+          automaticallyImplyLeading: false,
+          // Profile avatar moved to leading position
+          leading: Builder(
+            builder: (context) {
+              final userDataService = Provider.of<UserDataService>(context, listen: false);
+              final userData = userDataService.user;
+              if (userData != null) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ProfileAvatar(
+                    profileImageUrl: userData['profile_image_url']?.toString(),
+                    firstName: userData['first_name']?.toString() ?? '',
+                    lastName: userData['last_name']?.toString() ?? '',
+                    radius: 20,
+                    onTap: () => context.go('/profile'),
+                    showBorder: true,
+                  ),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
           actions: [
-            // Settings button (re-introduced)
-            IconButton(
-              tooltip: 'Settings',
-              icon: const Icon(IconMapping.settings),
-              onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  // Use go_router route
-                  context.go('/settings');
-                } else {
-                  context.go('/settings');
-                }
-              },
-            ),
             IconButton(
               tooltip: 'Refresh',
               icon: const Icon(Icons.refresh),
@@ -513,7 +520,7 @@ FilledButton.icon(
           ),
         ],
       ),
-      // TODO: Implement floating action button functionality when needed
+      floatingActionButton: const _ManagerExpandableFab(),
     );
   }
 
@@ -565,6 +572,129 @@ FilledButton.icon(
     ];
     final index = label.hashCode.abs() % palette.length;
     return palette[index];
+  }
+}
+
+/// Manager-specific expandable FAB with settings and additional options
+class _ManagerExpandableFab extends StatefulWidget {
+  const _ManagerExpandableFab();
+
+  @override
+  State<_ManagerExpandableFab> createState() => _ManagerExpandableFabState();
+}
+
+class _ManagerExpandableFabState extends State<_ManagerExpandableFab>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _expandAnimation;
+  bool _isOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      value: _isOpen ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      curve: Curves.fastOutSlowIn,
+      reverseCurve: Curves.easeOutQuad,
+      parent: _controller,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() {
+      _isOpen = !_isOpen;
+      if (_isOpen) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Settings button (appears when expanded)
+        AnimatedBuilder(
+          animation: _expandAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _expandAnimation.value,
+              child: Opacity(
+                opacity: _expandAnimation.value,
+                child: Visibility(
+                  visible: _expandAnimation.value > 0,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton.small(
+                      heroTag: "settings_fab",
+                      onPressed: () {
+                        _toggle();
+                        context.go('/settings');
+                      },
+                      tooltip: 'Settings',
+                      child: const Icon(IconMapping.settings),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        
+        // Analytics button (appears when expanded)
+        AnimatedBuilder(
+          animation: _expandAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _expandAnimation.value,
+              child: Opacity(
+                opacity: _expandAnimation.value,
+                child: Visibility(
+                  visible: _expandAnimation.value > 0,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton.small(
+                      heroTag: "analytics_fab",
+                      onPressed: () {
+                        _toggle();
+                        context.go('/analytics');
+                      },
+                      tooltip: 'Analytics',
+                      child: const Icon(IconMapping.barChart),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        
+        // Main FAB
+        FloatingActionButton(
+          heroTag: "main_fab",
+          onPressed: _toggle,
+          child: AnimatedRotation(
+            turns: _isOpen ? 0.125 : 0, // 45 degree rotation when expanded
+            duration: const Duration(milliseconds: 250),
+            child: Icon(_isOpen ? Icons.close : Icons.add),
+          ),
+        ),
+      ],
+    );
   }
 }
 
