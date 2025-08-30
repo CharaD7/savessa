@@ -287,6 +287,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             label: 'First Name',
             hint: 'Enter First Name',
             prefixIcon: const Icon(IconMapping.person),
+            useAuthFormStyling: true,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'errors.required_field'.tr();
@@ -313,6 +314,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             label: 'Middle Name',
             hint: 'Enter Middle Name',
             prefixIcon: const Icon(IconMapping.person),
+            useAuthFormStyling: true,
             validator: (value) {
               // Middle name is optional, so no validation required
               return null;
@@ -337,6 +339,7 @@ class _SignUpFormComponentState extends State<SignUpFormComponent> {
             label: 'Last Name',
             hint: 'Enter Last Name',
             prefixIcon: const Icon(IconMapping.person),
+            useAuthFormStyling: true,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'errors.required_field'.tr();
