@@ -118,11 +118,28 @@ class DatabaseService {
   }
 
   Future<Map<String, dynamic>?> getUserById(String userId) async {
-    final results = await query(
-      'SELECT id, first_name, last_name, other_names, email, phone, role, profile_image_url FROM users WHERE id = @id LIMIT 1',
-      {'id': userId},
-    );
-    return results.isNotEmpty ? results.first : null;
+    // Try with profile_image_url first, fall back without if column doesn't exist
+    try {
+      final results = await query(
+        'SELECT id, first_name, last_name, other_names, email, phone, role, profile_image_url FROM users WHERE id = @id LIMIT 1',
+        {'id': userId},
+      );
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      // If profile_image_url column doesn't exist, try without it
+      if (e.toString().contains('profile_image_url')) {
+        final results = await query(
+          'SELECT id, first_name, last_name, other_names, email, phone, role FROM users WHERE id = @id LIMIT 1',
+          {'id': userId},
+        );
+        final user = results.isNotEmpty ? results.first : null;
+        if (user != null) {
+          user['profile_image_url'] = null; // Add missing field as null
+        }
+        return user;
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateUserProfile({

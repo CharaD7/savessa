@@ -33,6 +33,8 @@ import 'package:savessa/features/savings/presentation/screens/my_contributions_s
 import 'package:savessa/features/profile/presentation/screens/profile_screen.dart';
 import 'package:savessa/features/groups/presentation/screens/groups_screen.dart';
 import 'package:savessa/features/groups/presentation/screens/join_group_screen.dart';
+import 'package:savessa/features/groups/presentation/screens/create_group_screen.dart';
+import 'package:savessa/features/members/presentation/screens/add_member_screen.dart';
 
 // For now, we'll create placeholder screens
 class PlaceholderScreen extends StatelessWidget {
@@ -184,7 +186,7 @@ class AppRouter {
                       return const PlaceholderScreen(title: 'Groups');
                     }
                   } catch (_) {}
-                  return const PlaceholderScreen(title: 'Create Group');
+                  return const CreateGroupScreen();
                 },
               ),
               GoRoute(
@@ -204,6 +206,26 @@ class AppRouter {
                     }
                   } catch (_) {}
                   return const JoinGroupScreen();
+                },
+              ),
+              GoRoute(
+                path: 'add-member',
+                builder: (context, state) {
+                  // Guard: only admins can add members
+                  try {
+                    final role = Provider.of<UserDataService>(context, listen: false).role;
+                    if (role != 'admin') {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Only Savings Managers can add members.')),
+                        );
+                        GoRouter.of(context).go('/groups');
+                      });
+                      return const PlaceholderScreen(title: 'Groups');
+                    }
+                  } catch (_) {}
+                  final groupId = state.uri.queryParameters['groupId'];
+                  return AddMemberScreen(groupId: groupId);
                 },
               ),
               GoRoute(
