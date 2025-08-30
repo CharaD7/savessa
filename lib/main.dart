@@ -19,6 +19,7 @@ import 'features/security/services/security_prefs_service.dart';
 import 'services/user/user_data_service.dart';
 import 'services/groups/active_group_service.dart';
 import 'core/config/env_config.dart';
+import 'shared/widgets/error_boundary.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -40,15 +41,17 @@ void main() async {
     // Continue execution with empty environment - EnvConfig will use defaults
   }
   
-  // Validate Firebase environment configuration
+  // Validate Firebase environment configuration (only in production)
   try {
     final envConfig = EnvConfig();
-    envConfig.validateFirebaseConfig();
-    debugPrint('Firebase environment configuration validated successfully');
+    if (envConfig.isProduction) {
+      envConfig.validateFirebaseConfig();
+      debugPrint('Firebase environment configuration validated successfully');
+    } else {
+      debugPrint('Skipping Firebase validation in development mode');
+    }
   } catch (e) {
     debugPrint('Firebase configuration validation failed: $e');
-    // In development, we might want to continue anyway with a warning
-    // In production, you might want to throw/exit here
     if (EnvConfig().isProduction) {
       throw StateError('Invalid Firebase configuration in production environment: $e');
     }
@@ -58,15 +61,17 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   
   // Enable Firebase initialization
+  bool firebaseInitialized = false;
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    firebaseInitialized = true;
     debugPrint('Firebase initialized successfully');
   } catch (e) {
     debugPrint('Failed to initialize Firebase: $e');
-    debugPrint('Check your Firebase configuration in the .env file');
+    debugPrint('App will continue without Firebase functionality');
     // In development, continue without Firebase
     // In production, you might want to throw/exit here
     if (EnvConfig().isProduction) {
@@ -81,11 +86,13 @@ void main() async {
   ]);
 
   runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('fr')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('en'),
-      child: const MyApp(),
+    ErrorBoundary(
+      child: EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('fr')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('en'),
+        child: const MyApp(),
+      ),
     ),
   );
 }
