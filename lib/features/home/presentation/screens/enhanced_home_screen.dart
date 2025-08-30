@@ -16,6 +16,7 @@ import 'package:savessa/services/groups/active_group_service.dart';
 import 'package:savessa/shared/widgets/screen_scaffold.dart';
 import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/shared/widgets/app_button.dart';
+import 'package:savessa/shared/widgets/profile_avatar.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
 import 'package:savessa/core/theme/app_theme.dart';
 
@@ -200,6 +201,19 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
     return ScreenScaffold(
       title: 'home.title'.tr(),
       actions: [
+        // Profile avatar button
+        if (_currentUser != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ProfileAvatar(
+              profileImageUrl: _currentUser!.profileImageUrl,
+              firstName: _currentUser!.firstName,
+              lastName: _currentUser!.lastName,
+              radius: 18,
+              onTap: () => context.go('/profile'),
+              showBorder: true,
+            ),
+          ),
         IconButton(
           icon: const Icon(IconMapping.refresh),
           onPressed: _isLoading ? null : _loadInitialData,

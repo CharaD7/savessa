@@ -12,6 +12,8 @@ import 'package:provider/provider.dart';
 import 'package:savessa/services/sync/sync_service.dart';
 import 'package:savessa/services/sync/queue_store.dart';
 import 'package:savessa/services/user/user_data_service.dart';
+import 'package:savessa/shared/widgets/profile_app_bar.dart';
+import 'package:savessa/shared/widgets/expandable_fab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -115,29 +117,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return ScreenScaffold(
-      title: 'home.title'.tr(),
-      actions: [
-          // Sync status chip
-          Builder(builder: (context) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: _HomeSyncChip(),
-            );
-          }),
+    return Scaffold(
+      appBar: ProfileAppBar(
+        actions: [
           IconButton(
             icon: const Icon(IconMapping.notifications),
             onPressed: () {
               context.go('/notifications');
             },
           ),
-          IconButton(
-            icon: const Icon(IconMapping.settings),
-            onPressed: () {
-              context.go('/settings');
-            },
-          ),
-],
+        ],
+      ),
       body: Stack(
         children: [
           // Main content
@@ -641,6 +631,9 @@ child: const Center(
             ),
         ],
       ),
+      floatingActionButton: _ExpandableFab(
+        onSettingsTap: () => context.go('/settings'),
+      ),
     );
   }
   
@@ -986,5 +979,112 @@ final qs = Provider.of<QueueStore>(context, listen: false);
     } catch (_) {
       return const SizedBox.shrink();
     }
+  }
+}
+
+/// Simple expandable FAB for settings access
+class _ExpandableFab extends StatefulWidget {
+  final VoidCallback? onSettingsTap;
+
+  const _ExpandableFab({
+    this.onSettingsTap,
+  });
+
+  @override
+  State<_ExpandableFab> createState() => _ExpandableFabState();
+}
+
+class _ExpandableFabState extends State<_ExpandableFab>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _expandAnimation;
+  bool _isOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      value: _isOpen ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      curve: Curves.fastOutSlowIn,
+      reverseCurve: Curves.easeOutQuad,
+      parent: _controller,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() {
+      _isOpen = !_isOpen;
+      if (_isOpen) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Settings button (appears when expanded)
+        AnimatedBuilder(
+          animation: _expandAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _expandAnimation.value,
+              child: Opacity(
+                opacity: _expandAnimation.value,
+                child: Visibility(
+                  visible: _expandAnimation.value > 0,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton(
+                      heroTag: "settings_fab",
+                      mini: true,
+                      onPressed: () {
+                        _toggle();
+                        if (widget.onSettingsTap != null) {
+                          widget.onSettingsTap!();
+                        }
+                      },
+                      backgroundColor: theme.colorScheme.secondary,
+                      foregroundColor: theme.colorScheme.onSecondary,
+                      child: const Icon(IconMapping.settings),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        
+        // Main FAB
+        FloatingActionButton(
+          heroTag: "main_fab",
+          onPressed: _toggle,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          child: AnimatedRotation(
+            turns: _isOpen ? 0.125 : 0, // 45 degree rotation when expanded
+            duration: const Duration(milliseconds: 250),
+            child: Icon(_isOpen ? Icons.close : Icons.add),
+          ),
+        ),
+      ],
+    );
   }
 }
