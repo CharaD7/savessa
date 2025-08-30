@@ -375,10 +375,6 @@ class ScaffoldWithBottomNav extends StatelessWidget {
             icon: Icon(IconMapping.barChart),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(IconMapping.profile),
-            label: 'Profile',
-          ),
         ],
       ),
     );
@@ -398,9 +394,6 @@ class ScaffoldWithBottomNav extends StatelessWidget {
     if (location.startsWith('/analytics')) {
       return 3;
     }
-    if (location.startsWith('/profile')) {
-      return 4;
-    }
     return 0;
   }
   
@@ -417,9 +410,6 @@ class ScaffoldWithBottomNav extends StatelessWidget {
         break;
       case 3:
         GoRouter.of(context).go('/analytics');
-        break;
-      case 4:
-        GoRouter.of(context).go('/profile');
         break;
     }
   }
