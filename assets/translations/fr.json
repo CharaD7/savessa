@@ -187,7 +187,30 @@
     "announcement_title": "Titre de l'annonce",
     "announcement_body": "Corps de l'annonce",
     "announcement_created": "Annonce créée avec succès",
-    "announcement_deleted": "Annonce supprimée avec succès"
+    "announcement_deleted": "Annonce supprimée avec succès",
+    "change_role": "Changer le rôle"
+  },
+  "manager": {
+    "dashboard_title": "Tableau de bord gestionnaire",
+    "overview": "Aperçu du tableau de bord",
+    "active_members": "Membres actifs",
+    "monthly_goal": "Objectif de ce mois",
+    "goal_reached": "Excellent travail! Vous avez atteint l'objectif mensuel.",
+    "keep_going": "Continuez! Vous êtes proche de l'objectif.",
+    "contribution_tracker": "Suivi des contributions",
+    "smart_contracts": "Contrôles des contrats intelligents",
+    "enable_automation": "Activer l'automatisation",
+    "disable_automation": "Désactiver l'automatisation",
+    "automation_desc": "Activez la vérification automatique et le suivi des étapes via des contrats intelligents.",
+    "automation_toggled": "Paramètre d'automatisation mis à jour",
+    "member_management": "Gestion des membres",
+    "send_reminder": "Envoyer un rappel",
+    "reminder_sent_via": "Rappel envoyé via {0} à {1}",
+    "sync_idle": "Synchronisé",
+    "syncing": "Synchronisation en cours…",
+    "sync_error": "Erreur de synchronisation",
+    "sync_now": "Synchroniser maintenant",
+    "pending": "En attente"
   },
   "analytics": {
     "title": "Analyses",

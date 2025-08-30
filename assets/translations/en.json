@@ -121,7 +121,9 @@
     "reminder_sent_via": "Reminder sent via {0} to {1}",
     "sync_idle": "Synced",
     "syncing": "Syncing…",
-    "sync_error": "Sync Error"
+    "sync_error": "Sync Error",
+    "sync_now": "Sync Now",
+    "pending": "Pending"
   },
   "savings": {
     "title": "Savings",
@@ -207,7 +209,8 @@
     "announcement_title": "Announcement Title",
     "announcement_body": "Announcement Body",
     "announcement_created": "Announcement created successfully",
-    "announcement_deleted": "Announcement deleted successfully"
+    "announcement_deleted": "Announcement deleted successfully",
+    "change_role": "Change Role"
   },
   "analytics": {
     "title": "Analytics",
