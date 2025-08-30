@@ -6,6 +6,7 @@ import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/services/auth/auth_service.dart';
 import 'package:savessa/services/groups/contribution_service.dart';
 import 'package:savessa/services/groups/active_group_service.dart';
+import 'package:savessa/shared/widgets/profile_app_bar.dart';
 
 class SavingsScreen extends StatefulWidget {
   const SavingsScreen({super.key});
@@ -97,10 +98,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Savings'),
-      ),
+      appBar: ProfileAppBar(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/savings/add'),
         icon: const Icon(IconMapping.addCircle),
