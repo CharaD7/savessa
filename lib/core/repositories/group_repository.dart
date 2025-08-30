@@ -272,16 +272,38 @@ class DatabaseGroupRepository implements GroupRepository {
   @override
   Future<List<GroupMemberModel>> getGroupMembers(String groupId) async {
     try {
-      final data = await _databaseService.query(
-        '''
-        SELECT gm.*, u.first_name, u.last_name, u.email, u.profile_image_url
-        FROM group_members gm
-        LEFT JOIN users u ON u.id = gm.user_id
-        WHERE gm.group_id = @gid
-        ORDER BY gm.joined_at ASC
-        ''',
-        {'gid': groupId},
-      );
+      List<Map<String, dynamic>> data;
+      
+      // Try with profile_image_url first, fall back without if column doesn't exist
+      try {
+        data = await _databaseService.query(
+          '''
+          SELECT gm.*, u.first_name, u.last_name, u.email, u.profile_image_url
+          FROM group_members gm
+          LEFT JOIN users u ON u.id = gm.user_id
+          WHERE gm.group_id = @gid
+          ORDER BY gm.joined_at ASC
+          ''',
+          {'gid': groupId},
+        );
+      } catch (e) {
+        // If profile_image_url column doesn't exist, try without it
+        if (e.toString().contains('profile_image_url')) {
+          data = await _databaseService.query(
+            '''
+            SELECT gm.*, u.first_name, u.last_name, u.email, 
+                   NULL as profile_image_url
+            FROM group_members gm
+            LEFT JOIN users u ON u.id = gm.user_id
+            WHERE gm.group_id = @gid
+            ORDER BY gm.joined_at ASC
+            ''',
+            {'gid': groupId},
+          );
+        } else {
+          rethrow;
+        }
+      }
 
       return data.map((item) {
         UserModel? user;

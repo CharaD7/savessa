@@ -19,6 +19,8 @@ class GroupsScreen extends StatefulWidget {
 class _GroupsScreenState extends State<GroupsScreen> {
   bool _loading = true;
   List<Map<String, dynamic>> _groups = const [];
+  bool _refreshing = false;
+  DateTime? _lastRefresh;
 
   @override
   void initState() {
@@ -36,6 +38,30 @@ class _GroupsScreenState extends State<GroupsScreen> {
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+  
+  Future<void> _refresh() async {
+    // Prevent rapid successive refreshes
+    if (_refreshing || (_lastRefresh != null && DateTime.now().difference(_lastRefresh!) < const Duration(seconds: 2))) {
+      return;
+    }
+    
+    setState(() => _refreshing = true);
+    _lastRefresh = DateTime.now();
+    
+    try {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final uid = auth.postgresUserId;
+      if (uid != null) {
+        // Clear cache to force fresh data
+        GroupService.clearCache(uid);
+        _groups = await GroupService().listGroupsForUser(uid);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _refreshing = false);
+      }
     }
   }
 
@@ -82,9 +108,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   itemCount: _groups.length,
                 ),
       floating: FloatingActionButton.extended(
-        onPressed: _load,
-        icon: const Icon(Icons.refresh),
-        label: const Text('Refresh'),
+        onPressed: _refreshing ? null : _refresh,
+        icon: _refreshing 
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : const Icon(Icons.refresh),
+        label: Text(_refreshing ? 'Refreshing...' : 'Refresh'),
       ),
     );
   }

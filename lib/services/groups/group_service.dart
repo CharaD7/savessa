@@ -2,13 +2,33 @@ import 'package:savessa/services/database/database_service.dart';
 
 class GroupService {
   final DatabaseService _db = DatabaseService();
+  
+  // Simple cache to avoid repeated queries
+  static final Map<String, List<Map<String, dynamic>>> _groupsCache = {};
+  static final Map<String, DateTime> _lastFetchTime = {};
+  static const Duration _cacheTimeout = Duration(seconds: 30);
 
   Future<List<Map<String, dynamic>>> fetchGroupsManagedByUser(String userId) async {
+    final cacheKey = 'managed_$userId';
+    final now = DateTime.now();
+    
+    // Check if we have cached data that's still valid
+    if (_groupsCache.containsKey(cacheKey) && 
+        _lastFetchTime.containsKey(cacheKey) &&
+        now.difference(_lastFetchTime[cacheKey]!) < _cacheTimeout) {
+      return _groupsCache[cacheKey]!;
+    }
+    
     try {
       final rows = await _db.query(
         'SELECT * FROM groups WHERE created_by = @uid ORDER BY created_at DESC',
         {'uid': userId},
       );
+      
+      // Cache the result
+      _groupsCache[cacheKey] = rows;
+      _lastFetchTime[cacheKey] = now;
+      
       return rows;
     } catch (_) {
       return [];
@@ -16,6 +36,16 @@ class GroupService {
   }
 
   Future<List<Map<String, dynamic>>> listGroupsForUser(String userId) async {
+    final cacheKey = 'user_$userId';
+    final now = DateTime.now();
+    
+    // Check if we have cached data that's still valid
+    if (_groupsCache.containsKey(cacheKey) && 
+        _lastFetchTime.containsKey(cacheKey) &&
+        now.difference(_lastFetchTime[cacheKey]!) < _cacheTimeout) {
+      return _groupsCache[cacheKey]!;
+    }
+    
     try {
       final rows = await _db.query(
         '''
@@ -27,6 +57,11 @@ class GroupService {
         ''' ,
         {'uid': userId},
       );
+      
+      // Cache the result
+      _groupsCache[cacheKey] = rows;
+      _lastFetchTime[cacheKey] = now;
+      
       return rows;
     } catch (_) {
       return [];
@@ -134,6 +169,19 @@ class GroupService {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+  
+  // Method to clear cache when groups are modified
+  static void clearCache([String? userId]) {
+    if (userId != null) {
+      _groupsCache.remove('managed_$userId');
+      _groupsCache.remove('user_$userId');
+      _lastFetchTime.remove('managed_$userId');
+      _lastFetchTime.remove('user_$userId');
+    } else {
+      _groupsCache.clear();
+      _lastFetchTime.clear();
     }
   }
 }
