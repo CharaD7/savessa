@@ -13,6 +13,31 @@ class AppTheme {
   static const Color lightGrey = Color(0xFFE0E0E0);
   static const Color error = Color(0xFFB00020);
   static const Color success = Color(0xFF4CAF50);
+  
+  // Additional colors for enhanced UI
+  static const Color softPurple = Color(0xFFE1BEE7);
+  static const Color darkGrey = Color(0xFF424242);
+  static const Color surfaceLight = Color(0xFFFAFAFA);
+  static const Color surfaceDark = Color(0xFF121212);
+  
+  // Gradient definitions
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [royalPurple, lightPurple],
+  );
+  
+  static const LinearGradient goldGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [gold, lightGold],
+  );
+  
+  static const LinearGradient surfaceGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [white, surfaceLight],
+  );
 
   // Light theme
   static ThemeData lightTheme = ThemeData(
@@ -66,20 +91,65 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: lightGrey.withValues(alpha: 0.3),
+      fillColor: white.withValues(alpha: 0.8),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: lightGrey.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: lightGrey.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: royalPurple),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: royalPurple,
+          width: 2.5,
+        ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: error),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: error,
+          width: 2,
+        ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: error,
+          width: 2.5,
+        ),
+      ),
+      labelStyle: TextStyle(
+        color: royalPurple.withValues(alpha: 0.8),
+        fontWeight: FontWeight.w500,
+        fontSize: 16,
+      ),
+      floatingLabelStyle: const TextStyle(
+        color: royalPurple,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+      ),
+      hintStyle: TextStyle(
+        color: grey.withValues(alpha: 0.7),
+        fontWeight: FontWeight.w400,
+      ),
+      errorStyle: const TextStyle(
+        color: error,
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16, 
+        vertical: 18,
+      ),
     ),
     cardTheme: CardThemeData(
       elevation: 2,
