@@ -7,14 +7,23 @@ class AuthService with ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal() {
-    _auth.userChanges().listen((_) async {
-      await _mirrorAndResolveRole();
-      notifyListeners();
-    });
+    try {
+      _auth.userChanges().listen((_) async {
+        await _mirrorAndResolveRole();
+        notifyListeners();
+      });
+      _firebaseAvailable = true;
+    } catch (e) {
+      debugPrint('Firebase Auth not available: $e');
+      _firebaseAvailable = false;
+      // Continue without Firebase auth functionality
+      _roleResolved = true;
+    }
   }
 
   final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
   final DatabaseService _db = DatabaseService();
+  bool _firebaseAvailable = false;
 
   String _role = 'member';
   String get role => _role; // 'admin' or 'member'
@@ -23,17 +32,31 @@ class AuthService with ChangeNotifier {
   String? _postgresUserId;
   String? get postgresUserId => _postgresUserId;
 
-  fb.User? get currentUser => _auth.currentUser;
-  Stream<fb.User?> get authStateChanges => _auth.authStateChanges();
+  fb.User? get currentUser => _firebaseAvailable ? _auth.currentUser : null;
+  Stream<fb.User?> get authStateChanges => _firebaseAvailable ? _auth.authStateChanges() : Stream.value(null);
 
   Future<void> ensureSignedInAnonymously() async {
-    if (_auth.currentUser == null) {
-      await _auth.signInAnonymously();
+    if (!_firebaseAvailable) {
+      debugPrint('Firebase Auth not available, skipping anonymous sign-in');
+      return;
+    }
+    try {
+      if (_auth.currentUser == null) {
+        await _auth.signInAnonymously();
+      }
+    } catch (e) {
+      debugPrint('Failed to sign in anonymously: $e');
     }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    if (_firebaseAvailable) {
+      try {
+        await _auth.signOut();
+      } catch (e) {
+        debugPrint('Failed to sign out from Firebase: $e');
+      }
+    }
     _role = 'member';
     _roleResolved = false;
     _postgresUserId = null;

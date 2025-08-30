@@ -66,7 +66,11 @@ class DatabaseService {
         debugPrint('Connected to PostgreSQL database');
       } catch (e) {
         debugPrint('Failed to connect to PostgreSQL database: $e');
-        rethrow;
+        debugPrint('App will continue with limited functionality');
+        // Don't rethrow in development - allow app to continue
+        if (const String.fromEnvironment('APP_ENV', defaultValue: 'development') == 'production') {
+          rethrow;
+        }
       }
     }
   }
