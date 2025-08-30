@@ -856,7 +856,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
                         ),
                       ),
                       if (groupMeta.group.smartContractEnabled)
-                        Icon(
+                        const Icon(
                           IconMapping.security,
                           size: 16,
                           color: AppTheme.gold,
@@ -1052,7 +1052,7 @@ class _EnhancedHomeScreenState extends State<EnhancedHomeScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('This shows the sum of all your contributions across all groups.'),
+            const Text('This shows the sum of all your contributions across all groups.'),
             const SizedBox(height: 16),
             if (_userGroups.isNotEmpty) ...[
               Text('Group breakdown:', style: Theme.of(context).textTheme.titleMedium),

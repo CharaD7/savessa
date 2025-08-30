@@ -26,7 +26,7 @@ class AnimationPerformance {
   // FPS monitoring
   int _frameCount = 0;
   Duration _lastFrameTime = Duration.zero;
-  Duration _fpsCheckInterval = const Duration(seconds: 1);
+  final Duration _fpsCheckInterval = const Duration(seconds: 1);
   
   /// Current animation quality setting
   AnimationQuality get currentQuality => _currentQuality;

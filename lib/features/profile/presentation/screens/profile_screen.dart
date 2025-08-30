@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' show FontFeature;
 
 import 'package:provider/provider.dart';
 import 'package:savessa/services/auth/auth_service.dart';
@@ -125,11 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
         contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(IconMapping.infoOutline, color: Colors.amber),
-            const SizedBox(width: 8),
-            const Text('Confirm changes'),
+            Icon(IconMapping.infoOutline, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Confirm changes'),
           ],
         ),
         content: Column(

@@ -278,7 +278,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: selectedGroupId,
+                            initialValue: selectedGroupId,
                             items: _groups
                                 .map((g) => DropdownMenuItem<String>(
                                       value: g['id']?.toString(),
@@ -513,7 +513,7 @@ FilledButton.icon(
           ),
         ],
       ),
-      floatingActionButton: _SpeedDial(onAddContribution: () {}, onAddMember: () {}),
+      // TODO: Implement floating action button functionality when needed
     );
   }
 

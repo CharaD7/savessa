@@ -134,7 +134,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           _voiceGuidanceEnabled = value;
                         });
                       },
-                      activeColor: theme.colorScheme.secondary,
+                      activeThumbColor: theme.colorScheme.secondary,
                     ),
                   ],
                 ),

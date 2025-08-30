@@ -253,7 +253,7 @@ class _ParticleSystemBackgroundState extends State<ParticleSystemBackground>
     final center = Offset(size.width / 2, size.height / 2);
     final outerRadius = size.width / 2;
     final innerRadius = outerRadius * 0.4;
-    final spikes = 5;
+    const spikes = 5;
     
     for (int i = 0; i < spikes * 2; i++) {
       final angle = (i * math.pi) / spikes;
@@ -406,7 +406,7 @@ class _ManagedParticlesPainter extends CustomPainter {
   
   void _drawStar(Canvas canvas, Paint paint, double radius) {
     final path = Path();
-    final spikes = 5;
+    const spikes = 5;
     final innerRadius = radius * 0.4;
     
     for (int i = 0; i < spikes * 2; i++) {

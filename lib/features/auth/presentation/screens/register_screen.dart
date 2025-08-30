@@ -551,7 +551,7 @@ decoration: BoxDecoration(
                         onChanged: (value) {
                           _toggleVoiceGuidance();
                         },
-                        activeColor: theme.colorScheme.secondary,
+                        activeThumbColor: theme.colorScheme.secondary,
                       ),
                     ],
                   ),
@@ -599,7 +599,7 @@ FeatherIcons.mapPin,
                             _triggerCountryDetectionOnFocus();
                           }
                         },
-                        activeColor: theme.colorScheme.secondary,
+                        activeThumbColor: theme.colorScheme.secondary,
                       ),
                     ],
                   ),
@@ -635,6 +635,7 @@ FeatherIcons.mapPin,
                         AppTextField(
                           label: 'auth.first_name'.tr(),
                           controller: _firstNameController,
+                          focusNode: _firstNameFocusNode,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(IconMapping.person),
                           validator: (value) {
@@ -650,6 +651,7 @@ FeatherIcons.mapPin,
                         AppTextField(
                           label: 'auth.last_name'.tr(),
                           controller: _lastNameController,
+                          focusNode: _lastNameFocusNode,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(IconMapping.personOutline),
                           validator: (value) {
@@ -665,6 +667,7 @@ FeatherIcons.mapPin,
                         AppTextField(
                           label: 'auth.other_names'.tr(),
                           controller: _otherNamesController,
+                          focusNode: _otherNamesFocusNode,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(IconMapping.peopleOutline),
                           // Other names is optional, so no validator

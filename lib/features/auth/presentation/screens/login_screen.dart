@@ -339,7 +339,7 @@ decoration: BoxDecoration(
                         onChanged: (value) {
                           _toggleVoiceGuidance();
                         },
-                        activeColor: theme.colorScheme.secondary,
+                        activeThumbColor: theme.colorScheme.secondary,
                       ),
                     ],
                   ),

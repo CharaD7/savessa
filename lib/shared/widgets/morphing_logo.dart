@@ -394,7 +394,7 @@ class _ParticleTrailsPainter extends CustomPainter {
   
   @override
   void paint(Canvas canvas, Size size) {
-    final deltaTime = 1.0 / 60.0; // Assume 60 FPS
+    const deltaTime = 1.0 / 60.0; // Assume 60 FPS
     
     for (final particle in particles) {
       particle.update(deltaTime);
