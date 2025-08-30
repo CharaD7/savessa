@@ -8,6 +8,9 @@ import 'package:savessa/shared/widgets/app_card.dart';
 import 'package:savessa/shared/widgets/screen_scaffold.dart';
 import 'package:savessa/services/audit/audit_log_service.dart';
 import 'package:savessa/core/constants/icon_mapping.dart';
+import 'package:savessa/services/profile/profile_image_service.dart';
+import 'package:savessa/shared/widgets/profile_avatar.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _emailCtrl = TextEditingController();
 
   bool _loading = false;
+  String? _currentProfileImageUrl;
 
   @override
   void dispose() {
@@ -70,12 +74,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _otherNamesCtrl.text = (session.user?['other_names'] ?? '').toString();
         _phoneCtrl.text = (session.user?['phone'] ?? '').toString();
         _emailCtrl.text = (session.user?['email'] ?? (auth.currentUser?.email ?? '')).toString();
+        _currentProfileImageUrl = session.user?['profile_image_url']?.toString();
       } else {
         _firstNameCtrl.text = (row['first_name'] ?? '').toString();
         _lastNameCtrl.text = (row['last_name'] ?? '').toString();
         _otherNamesCtrl.text = (row['other_names'] ?? '').toString();
         _phoneCtrl.text = (row['phone'] ?? '').toString();
         _emailCtrl.text = (row['email'] ?? '').toString();
+        _currentProfileImageUrl = row['profile_image_url']?.toString();
       }
     } catch (_) {
       if (!mounted) return;
@@ -208,6 +214,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Handle profile picture upload
+  Future<void> _uploadProfilePicture() async {
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.camera_alt, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Update Profile Picture'),
+          ],
+        ),
+        content: const Text('Choose the source for your profile picture:'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(ImageSource.camera),
+            icon: const Icon(Icons.camera),
+            label: const Text('Camera'),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library),
+            label: const Text('Gallery'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    setState(() => _loading = true);
+    try {
+      final profileService = ProfileImageService();
+      final imageFile = await profileService.pickImage(source: source);
+      
+      if (imageFile == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image selected')),
+          );
+        }
+        return;
+      }
+
+      // Validate image
+      if (!profileService.validateImage(imageFile)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid image format. Please select a JPEG, PNG, or other supported format.')),
+          );
+        }
+        return;
+      }
+
+      // Check image size
+      if (!await profileService.isImageSizeAcceptable(imageFile)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image is too large. Please select an image smaller than 5MB.')),
+          );
+        }
+        return;
+      }
+
+      final userId = await _resolveUserUuid();
+      if (userId == null) {
+        throw Exception('Unable to determine user ID');
+      }
+
+      // Save image locally
+      final localPath = await profileService.saveImageLocally(imageFile, userId);
+      if (localPath == null) {
+        throw Exception('Failed to save image locally');
+      }
+
+      // Convert to URL format for database
+      final profileImageUrl = profileService.localPathToUrl(localPath);
+
+      // Update database
+      final db = DatabaseService();
+      await db.updateUserProfile(
+        userId: userId,
+        profileImageUrl: profileImageUrl,
+      );
+
+      // Clean up old images
+      await profileService.cleanupOldProfileImages(userId);
+
+      // Log action
+      try {
+        final auth = Provider.of<AuthService>(context, listen: false);
+        await AuditLogService().logAction(
+          userId: auth.postgresUserId!,
+          action: 'profile_picture_update',
+          metadata: {'image_path': localPath},
+        );
+      } catch (_) {}
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated successfully!')),
+        );
+        await _load(); // Reload profile data
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile picture: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -241,10 +366,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                    child: const Icon(IconMapping.profile, size: 28),
+                  Stack(
+                    children: [
+                      LargeProfileAvatar(
+                        profileImageUrl: _currentProfileImageUrl,
+                        firstName: _firstNameCtrl.text,
+                        lastName: _lastNameCtrl.text,
+                        onTap: _loading ? null : _uploadProfilePicture,
+                        showBorder: true,
+                      ),
+                      if (!_loading)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.surface,
+                                width: 2,
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.camera_alt, size: 18),
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              onPressed: _uploadProfilePicture,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 12),
                   Expanded(
