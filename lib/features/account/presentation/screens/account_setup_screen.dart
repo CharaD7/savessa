@@ -498,7 +498,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> with SingleTick
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login error. Please try again.'),
+          content: const Text('Login error. Please try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -742,7 +742,7 @@ Container(
                           onChanged: (value) {
                             _toggleVoiceGuidance();
                           },
-                          activeColor: theme.colorScheme.secondary,
+                          activeThumbColor: theme.colorScheme.secondary,
                         ),
                       ],
                     ),
@@ -790,7 +790,7 @@ FeatherIcons.mapPin,
                               _triggerCountryDetectionOnFocus();
                             }
                           },
-                          activeColor: theme.colorScheme.secondary,
+                          activeThumbColor: theme.colorScheme.secondary,
                         ),
                       ],
                     ),
