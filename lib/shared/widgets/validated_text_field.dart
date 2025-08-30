@@ -244,10 +244,13 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
   }
 
   void _onFocusChanged() {
-    // When focus is lost, trigger validation
-    if (!_focusNode.hasFocus && _controller.text.isNotEmpty) {
-      _onTextChanged();
-    }
+    // Always trigger rebuild on focus change for label color updates
+    setState(() {
+      // When focus is lost, trigger validation
+      if (!_focusNode.hasFocus && _controller.text.isNotEmpty) {
+        _onTextChanged();
+      }
+    });
   }
 
   @override
@@ -304,6 +307,11 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         labelStyle: TextStyle(
           color: _focusNode.hasFocus ? AppTheme.gold : Colors.white.withValues(alpha: 0.9),
           fontWeight: _focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: AppTheme.gold,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
         ),
         hintText: widget.hint,
         hintStyle: TextStyle(
