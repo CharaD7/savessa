@@ -191,5 +191,23 @@ class MigrationService {
           trusted BOOLEAN DEFAULT TRUE
         );
         ''',
+        // password_reset_tokens for forgot password functionality
+        '''
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token_hash BYTEA NOT NULL,
+          type TEXT NOT NULL CHECK (type IN ('email', 'sms')),
+          expires_at TIMESTAMPTZ NOT NULL,
+          used BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        ''',
+        // indexes for password reset tokens
+        '''
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_created ON password_reset_tokens(user_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at) WHERE NOT used;
+        ''',
       ];
 }
