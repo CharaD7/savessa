@@ -82,6 +82,14 @@ class EnvConfig {
   String get emailFromAddress => dotenv.env['EMAIL_FROM_ADDRESS'] ?? '';
   String get emailFromName => dotenv.env['EMAIL_FROM_NAME'] ?? 'Savessa';
   
+  // Twilio SMS Configuration
+  String get twilioAccountSid => dotenv.env['TWILIO_ACCOUNT_SID'] ?? '';
+  String get twilioAuthToken => dotenv.env['TWILIO_AUTH_TOKEN'] ?? '';
+  String get twilioPhoneNumber => dotenv.env['TWILIO_PHONE_NUMBER'] ?? '';
+  
+  // Resend Email Configuration
+  String get resendApiKey => dotenv.env['RESEND_API_KEY'] ?? '';
+  
   // App configuration
   String get appName => dotenv.env['APP_NAME'] ?? 'Savessa';
   String get appEnv => dotenv.env['APP_ENV'] ?? 'development';

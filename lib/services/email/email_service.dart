@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'package:http/http.dart' as http;
 import 'package:savessa/core/config/env_config.dart';
+import 'package:flutter/foundation.dart';
 
 class EmailService {
   static final EmailService _instance = EmailService._internal();

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:savessa/core/config/env_config.dart';
 
 class SmsService {
@@ -18,21 +20,21 @@ class SmsService {
   }
 
   /// Sends a password reset SMS with token
-  /// For production, this should be replaced with actual SMS provider integration
   Future<bool> sendPasswordResetSMS({
     required String phoneNumber, 
     required String resetCode
   }) async {
     try {
-      final message = _buildPasswordResetSmsMessage(resetCode);
-      
-      // For development: use device SMS app
-      if (_env.isDevelopment) {
-        return await _sendViaSmsApp(phoneNumber, message);
+      // Validate phone number format
+      if (!isValidPhoneNumber(phoneNumber)) {
+        debugPrint('Invalid phone number format: $phoneNumber');
+        return false;
       }
       
-      // For production: integrate with actual SMS provider (Twilio, AWS SNS, etc.)
-      // TODO: Replace with actual SMS provider implementation
+      final message = _buildPasswordResetSmsMessage(resetCode);
+      debugPrint('Sending password reset SMS to ${formatPhoneNumber(phoneNumber)}');
+      
+      // Use provider-based sending (Twilio in production, SMS app in development)
       return await _sendViaProvider(phoneNumber, message);
     } catch (e) {
       debugPrint('Error sending password reset SMS: $e');
@@ -55,30 +57,79 @@ class SmsService {
     }
   }
 
-  /// Sends SMS via external provider (production)
-  /// TODO: Implement actual SMS provider integration
+  /// Sends SMS via Twilio (production)
   Future<bool> _sendViaProvider(String phoneNumber, String message) async {
     try {
-      // This is where you would integrate with your SMS provider
-      // Examples:
-      // - Twilio: https://pub.dev/packages/twilio_flutter
-      // - AWS SNS: Use AWS SDK
-      // - Firebase Auth SMS: Use Firebase Auth phone verification
-      
-      debugPrint('SMS Provider not configured. Message would be sent to $phoneNumber: $message');
-      
-      // For now, simulate success in development
-      if (_env.isDevelopment) {
-        // Simulate network delay
-        await Future.delayed(const Duration(seconds: 2));
-        debugPrint('✅ SMS sent successfully (simulated)');
-        return true;
+      // Check if Twilio is configured
+      if (_env.twilioAccountSid.isEmpty || _env.twilioAuthToken.isEmpty || _env.twilioPhoneNumber.isEmpty) {
+        debugPrint('Twilio not configured. Required: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER');
+        
+        // In development, fall back to SMS app
+        if (_env.isDevelopment) {
+          debugPrint('Development mode: falling back to SMS app');
+          return await _sendViaSmsApp(phoneNumber, message);
+        }
+        
+        throw Exception('Twilio SMS provider not configured');
       }
       
-      // In production, throw error if no provider is configured
-      throw Exception('SMS provider not configured');
+      // Prepare Twilio API request
+      final accountSid = _env.twilioAccountSid;
+      final authToken = _env.twilioAuthToken;
+      final fromNumber = _env.twilioPhoneNumber;
+      
+      // Twilio Messages API endpoint
+      final url = Uri.parse('https://api.twilio.com/2010-04-01/Accounts/$accountSid/Messages.json');
+      
+      // Create authorization header (Basic Auth)
+      final credentials = base64Encode(utf8.encode('$accountSid:$authToken'));
+      
+      // Send SMS via Twilio API
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Basic $credentials',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'From': fromNumber,
+          'To': phoneNumber,
+          'Body': message,
+        },
+      );
+      
+      // Check response
+      if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        final messageSid = responseData['sid'];
+        final status = responseData['status'];
+        
+        debugPrint('✅ SMS sent successfully via Twilio');
+        debugPrint('Message SID: $messageSid, Status: $status');
+        return true;
+      } else {
+        // Parse error response
+        final errorData = json.decode(response.body);
+        final errorCode = errorData['code'];
+        final errorMessage = errorData['message'];
+        
+        debugPrint('❌ Twilio SMS failed: $errorCode - $errorMessage');
+        return false;
+      }
+      
     } catch (e) {
-      debugPrint('Error sending SMS via provider: $e');
+      debugPrint('Error sending SMS via Twilio: $e');
+      
+      // In development, try fallback to SMS app
+      if (_env.isDevelopment) {
+        debugPrint('Development mode: attempting SMS app fallback due to error');
+        try {
+          return await _sendViaSmsApp(phoneNumber, message);
+        } catch (fallbackError) {
+          debugPrint('SMS app fallback also failed: $fallbackError');
+        }
+      }
+      
       return false;
     }
   }
@@ -120,11 +171,75 @@ Do not share this code with anyone.''';
     return phoneNumber;
   }
 
-  /// Configuration for SMS providers (to be implemented)
-  Map<String, String> get _smsProviderConfig => {
-    'twilio_account_sid': _env.isDevelopment ? 'dev_account_sid' : '',
-    'twilio_auth_token': _env.isDevelopment ? 'dev_auth_token' : '',
-    'twilio_phone_number': _env.isDevelopment ? '+1234567890' : '',
-    // Add other SMS provider configurations as needed
-  };
+  /// Checks if Twilio is properly configured
+  bool isTwilioConfigured() {
+    return _env.twilioAccountSid.isNotEmpty && 
+           _env.twilioAuthToken.isNotEmpty && 
+           _env.twilioPhoneNumber.isNotEmpty;
+  }
+  
+  /// Gets Twilio configuration status for debugging
+  Map<String, dynamic> getTwilioStatus() {
+    return {
+      'configured': isTwilioConfigured(),
+      'account_sid_set': _env.twilioAccountSid.isNotEmpty,
+      'auth_token_set': _env.twilioAuthToken.isNotEmpty,
+      'phone_number_set': _env.twilioPhoneNumber.isNotEmpty,
+      'phone_number': _env.twilioPhoneNumber.isNotEmpty ? 
+        formatPhoneNumber(_env.twilioPhoneNumber) : 'Not set',
+      'environment': _env.appEnv,
+    };
+  }
+  
+  /// Tests Twilio connectivity (optional, for debugging)
+  Future<Map<String, dynamic>> testTwilioConnection() async {
+    final status = {
+      'success': false,
+      'message': '',
+      'details': <String, dynamic>{},
+    };
+    
+    try {
+      if (!isTwilioConfigured()) {
+        status['message'] = 'Twilio not properly configured';
+        status['details'] = getTwilioStatus();
+        return status;
+      }
+      
+      // Test by fetching account information
+      final accountSid = _env.twilioAccountSid;
+      final authToken = _env.twilioAuthToken;
+      final credentials = base64Encode(utf8.encode('$accountSid:$authToken'));
+      final url = Uri.parse('https://api.twilio.com/2010-04-01/Accounts/$accountSid.json');
+      
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Basic $credentials',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        status['success'] = true;
+        status['message'] = 'Twilio connection successful';
+        status['details'] = {
+          'account_sid': data['sid'],
+          'friendly_name': data['friendly_name'],
+          'status': data['status'],
+        };
+      } else {
+        status['message'] = 'Twilio authentication failed';
+        status['details'] = {
+          'status_code': response.statusCode,
+          'response': response.body,
+        };
+      }
+    } catch (e) {
+      status['message'] = 'Twilio connection test failed';
+      status['details'] = {'error': e.toString()};
+    }
+    
+    return status;
+  }
 }
