@@ -13,6 +13,8 @@ import 'package:savessa/features/role/presentation/screens/role_selection_screen
 import 'package:savessa/features/account/presentation/screens/account_setup_screen.dart';
 import 'package:savessa/features/auth/presentation/screens/login_screen.dart';
 import 'package:savessa/features/auth/presentation/screens/register_screen.dart';
+import 'package:savessa/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:savessa/features/auth/presentation/screens/password_reset_success_screen.dart';
 import 'package:savessa/features/home/presentation/screens/home_screen.dart';
 import 'package:savessa/features/home/presentation/screens/manager_home_screen.dart';
 import 'package:savessa/features/home/presentation/screens/enhanced_home_screen.dart';
@@ -123,7 +125,11 @@ class AppRouter {
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (context, state) => const PlaceholderScreen(title: 'Forgot Password'),
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password-success',
+        builder: (context, state) => const PasswordResetSuccessScreen(),
       ),
       
       // Main app shell with bottom navigation

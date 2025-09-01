@@ -24,7 +24,7 @@ class PasswordResetTokenRepository {
       }
 
       // Generate secure token
-      final plainToken = _generateSecureToken();
+      final plainToken = _generateSecureToken(type: type);
       
       // Hash the token for secure storage
       final tokenHash = sha256.convert(utf8.encode(plainToken)).bytes;
